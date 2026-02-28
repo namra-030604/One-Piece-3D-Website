@@ -1555,7 +1555,7 @@ export default function OnePiece() {
           color: "#62C3F8",
           textShadow: "0 0 12px rgba(98,195,248,0.3)",
         }}>
-          Built by [Your Name]
+          Built by Namra
         </div>
         <div data-credit-line data-testid="credits-tech" style={{
           fontFamily: "'Cinzel', serif",
@@ -1563,13 +1563,13 @@ export default function OnePiece() {
           color: "#888",
           letterSpacing: "0.1em",
         }}>
-          Three.js · GSAP · WebGL · Replit
+          Three.js · GSAP · WebGL
         </div>
         <a
           data-credit-line
           data-credits-link
           data-testid="credits-portfolio-link"
-          href="#"
+          href="https://github.com/namra-030604"
           target="_blank"
           rel="noopener noreferrer"
           style={{

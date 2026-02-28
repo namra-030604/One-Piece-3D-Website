@@ -142,10 +142,6 @@ export default function OnePiece() {
 
       initializedRef.current = true;
 
-      // ══════════════════════════════════════════════════════════════════════
-      // ── CORE ENGINE ───────────────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
-
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x050a1a);
       scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
@@ -182,18 +178,10 @@ export default function OnePiece() {
 
       const clock = new THREE.Clock();
 
-      // ══════════════════════════════════════════════════════════════════════
-      // ── ARC STATE ─────────────────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
-
       let currentArcIndex = 0;
       let isTransitioning = false;
       let arcObjects: any[] = [];
       let arcAnimateFn: ((t: number) => void) | null = null;
-
-      // ══════════════════════════════════════════════════════════════════════
-      // ── PERSISTENT STAR FIELD ─────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
 
       const starCount = 2000;
       const starGeo = new THREE.BufferGeometry();
@@ -210,36 +198,25 @@ export default function OnePiece() {
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
 
-      // ══════════════════════════════════════════════════════════════════════
-      // ── SCENE MANAGEMENT ──────────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
-
       const clearScene = () => {
         for (const obj of arcObjects) {
           scene.remove(obj);
+          obj.traverse?.((child: any) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) child.material.forEach((m: any) => m.dispose());
+              else child.material.dispose();
+            }
+          });
           if (obj.geometry) obj.geometry.dispose();
           if (obj.material) {
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach((m: any) => m.dispose());
-            } else {
-              obj.material.dispose();
-            }
-          }
-          if (obj.children) {
-            obj.traverse((child: any) => {
-              if (child.geometry) child.geometry.dispose();
-              if (child.material) {
-                if (Array.isArray(child.material)) {
-                  child.material.forEach((m: any) => m.dispose());
-                } else {
-                  child.material.dispose();
-                }
-              }
-            });
+            if (Array.isArray(obj.material)) obj.material.forEach((m: any) => m.dispose());
+            else obj.material.dispose();
           }
         }
         arcObjects = [];
         arcAnimateFn = null;
+        scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
       };
 
       const addArcObject = (obj: any) => {
@@ -248,10 +225,13 @@ export default function OnePiece() {
       };
 
       // ══════════════════════════════════════════════════════════════════════
-      // ── ARC SCENE BUILDERS ────────────────────────────────────────────────
+      // ── ARC 0: GRAND LINE ─────────────────────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
       const buildGrandLine = () => {
+        scene.background = new THREE.Color(0x050a1a);
+        scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
+
         const oceanGeo = new THREE.PlaneGeometry(200, 200, 80, 80);
         const oceanMat = new THREE.MeshPhongMaterial({
           color: 0x1a4a8a, shininess: 60, specular: 0x4488cc,
@@ -275,8 +255,7 @@ export default function OnePiece() {
         torus.position.set(0, 2, 0);
         addArcObject(torus);
 
-        const amb = new THREE.AmbientLight(0x1a2a5a, 1.5);
-        addArcObject(amb);
+        addArcObject(new THREE.AmbientLight(0x1a2a5a, 1.5));
         const dir = new THREE.DirectionalLight(0xffcd00, 1);
         dir.position.set(5, 10, 5);
         addArcObject(dir);
@@ -292,19 +271,27 @@ export default function OnePiece() {
           }
           posAttr.needsUpdate = true;
           ocean.geometry.computeVertexNormals();
-
           torus.rotation.y += 0.003;
           torus.rotation.x += 0.001;
           torus.position.y = 2 + Math.sin(t * 0.8) * 0.4;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 1: EAST BLUE ──────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildEastBlue = () => {
-        const amb = new THREE.AmbientLight(0x87ceeb, 1.2);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.005);
+
+        addArcObject(new THREE.AmbientLight(0x87ceeb, 1.2));
         const dir = new THREE.DirectionalLight(0xffffff, 1.0);
         dir.position.set(5, 10, 5);
         addArcObject(dir);
+        const warmPt = new THREE.PointLight(0x20b2aa, 0.8, 40);
+        warmPt.position.set(0, 5, 5);
+        addArcObject(warmPt);
 
         const oceanGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
         const oceanMat = new THREE.MeshPhongMaterial({
@@ -325,40 +312,78 @@ export default function OnePiece() {
         island.position.set(0, -7, 0);
         addArcObject(island);
 
-        const treeGeo = new THREE.ConeGeometry(1.2, 4, 8);
-        const treeMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
-        const tree = new THREE.Mesh(treeGeo, treeMat);
-        tree.position.set(0, -4, 0);
-        addArcObject(tree);
-
-        const trunkGeo = new THREE.CylinderGeometry(0.2, 0.25, 2, 8);
+        const trunkGeo = new THREE.CylinderGeometry(0.2, 0.25, 2.5, 8);
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-        trunk.position.set(0, -6.5, 0);
-        addArcObject(trunk);
+        const trunk1 = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk1.position.set(0, -5.5, 0);
+        addArcObject(trunk1);
+        const trunk2 = new THREE.Mesh(trunkGeo.clone(), trunkMat.clone());
+        trunk2.position.set(1.5, -5.5, 1);
+        addArcObject(trunk2);
+
+        const treeGeo = new THREE.ConeGeometry(1.2, 3.5, 8);
+        const treeMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+        const tree1 = new THREE.Mesh(treeGeo, treeMat);
+        tree1.position.set(0, -3.5, 0);
+        addArcObject(tree1);
+        const tree2 = new THREE.Mesh(treeGeo.clone(), treeMat.clone());
+        tree2.position.set(1.5, -3.5, 1);
+        tree2.scale.set(0.8, 0.9, 0.8);
+        addArcObject(tree2);
+
+        const foamCount = 500;
+        const foamGeo = new THREE.BufferGeometry();
+        const foamPos = new Float32Array(foamCount * 3);
+        for (let i = 0; i < foamCount; i++) {
+          foamPos[i * 3] = (Math.random() - 0.5) * 80;
+          foamPos[i * 3 + 1] = -7.5 + Math.random() * 1.0;
+          foamPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+        }
+        foamGeo.setAttribute("position", new THREE.BufferAttribute(foamPos, 3));
+        const foamMat = new THREE.PointsMaterial({
+          color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6,
+        });
+        const foam = new THREE.Points(foamGeo, foamMat);
+        addArcObject(foam);
 
         arcAnimateFn = (t: number) => {
           for (let i = 0; i < posAttr.count; i++) {
             const x = posAttr.getX(i);
             const y = posAttr.getY(i);
-            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.2 + t * 0.7) * 0.6 + Math.cos(y * 0.25 + t * 0.5) * 0.4);
+            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.2 + t * 0.7) * 0.3 + Math.cos(y * 0.25 + t * 0.5) * 0.2);
           }
           posAttr.needsUpdate = true;
           ocean.geometry.computeVertexNormals();
-          tree.rotation.z = Math.sin(t * 1.5) * 0.03;
+          tree1.rotation.z = Math.sin(t * 1.5) * 0.03;
+          tree2.rotation.z = Math.sin(t * 1.3 + 1) * 0.025;
+          const fp = foam.geometry.attributes.position;
+          for (let i = 0; i < fp.count; i++) {
+            fp.setX(i, fp.getX(i) - 0.03);
+            if (fp.getX(i) < -40) fp.setX(i, 40);
+          }
+          fp.needsUpdate = true;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 2: ALABASTA ───────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildAlabasta = () => {
-        const amb = new THREE.AmbientLight(0xc2956c, 0.8);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x1a0a00);
+        scene.fog = new THREE.FogExp2(0x1a0a00, 0.006);
+
+        addArcObject(new THREE.AmbientLight(0xc2956c, 0.8));
         const dir = new THREE.DirectionalLight(0xff8c00, 1.5);
         dir.position.set(0, 15, 5);
         addArcObject(dir);
+        const hotPt = new THREE.PointLight(0xff8c00, 1.0, 30);
+        hotPt.position.set(5, 8, 0);
+        addArcObject(hotPt);
 
         const desertGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
         const desertMat = new THREE.MeshStandardMaterial({
-          color: 0xdaa520, roughness: 0.9, flatShading: true,
+          color: 0xc2956c, roughness: 0.9, flatShading: true,
         });
         const desert = new THREE.Mesh(desertGeo, desertMat);
         desert.rotation.x = -Math.PI / 2;
@@ -371,102 +396,139 @@ export default function OnePiece() {
         posAttr.needsUpdate = true;
         desert.geometry.computeVertexNormals();
 
-        const pyrGeo = new THREE.ConeGeometry(5, 8, 4);
-        const pyrMat = new THREE.MeshStandardMaterial({ color: 0xd2691e, roughness: 0.7 });
-        const pyr = new THREE.Mesh(pyrGeo, pyrMat);
-        pyr.position.set(0, -2, -5);
-        addArcObject(pyr);
-
-        const pyr2Geo = new THREE.ConeGeometry(3, 5, 4);
-        const pyr2 = new THREE.Mesh(pyr2Geo, pyrMat.clone());
+        const pyrMat = new THREE.MeshStandardMaterial({ color: 0xdaa520, roughness: 0.6, metalness: 0.15 });
+        const pyr1 = new THREE.Mesh(new THREE.ConeGeometry(5, 8, 4), pyrMat);
+        pyr1.position.set(0, -2, -5);
+        addArcObject(pyr1);
+        const pyr2 = new THREE.Mesh(new THREE.ConeGeometry(3, 5, 4), pyrMat.clone());
         pyr2.position.set(8, -4, -8);
         addArcObject(pyr2);
+        const pyr3 = new THREE.Mesh(new THREE.ConeGeometry(2.5, 4, 4), pyrMat.clone());
+        pyr3.position.set(-7, -5, -10);
+        addArcObject(pyr3);
 
         const sandCount = 1500;
         const sandGeo = new THREE.BufferGeometry();
         const sandPos = new Float32Array(sandCount * 3);
         for (let i = 0; i < sandCount; i++) {
-          sandPos[i * 3] = (Math.random() - 0.5) * 60;
+          sandPos[i * 3] = (Math.random() - 0.5) * 80;
           sandPos[i * 3 + 1] = Math.random() * 20 - 5;
-          sandPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+          sandPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
         }
         sandGeo.setAttribute("position", new THREE.BufferAttribute(sandPos, 3));
         const sandMat = new THREE.PointsMaterial({
-          color: 0xdaa520, size: 0.15, transparent: true, opacity: 0.5,
+          color: 0xd2691e, size: 0.12, transparent: true, opacity: 0.5,
         });
         const sandStorm = new THREE.Points(sandGeo, sandMat);
         addArcObject(sandStorm);
 
         arcAnimateFn = (t: number) => {
-          sandStorm.rotation.y += 0.002;
           const sp = sandStorm.geometry.attributes.position;
           for (let i = 0; i < sp.count; i++) {
-            sp.setX(i, sp.getX(i) + Math.sin(t + i) * 0.02);
-            sp.setY(i, sp.getY(i) + 0.01);
-            if (sp.getY(i) > 15) sp.setY(i, -5);
+            sp.setX(i, sp.getX(i) + 0.06 + Math.sin(t * 2 + i * 0.3) * 0.02);
+            sp.setY(i, sp.getY(i) + Math.sin(t + i) * 0.005);
+            if (sp.getX(i) > 40) sp.setX(i, -40);
           }
           sp.needsUpdate = true;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 3: SKYPIEA ────────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildSkypiea = () => {
-        const amb = new THREE.AmbientLight(0x228b22, 0.6);
-        addArcObject(amb);
-        const sun = new THREE.SpotLight(0xffcd00, 2.0, 100, Math.PI / 4);
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.004);
+
+        addArcObject(new THREE.AmbientLight(0x228b22, 0.6));
+        const sun = new THREE.SpotLight(0xffcd00, 2.5, 100, Math.PI / 4);
         sun.position.set(0, 30, 10);
         addArcObject(sun);
         const dir = new THREE.DirectionalLight(0xfffff0, 0.8);
         dir.position.set(-5, 15, 5);
         addArcObject(dir);
 
+        const cloudPositions: any[] = [];
         for (let i = 0; i < 6; i++) {
-          const r = 2 + Math.random() * 4;
-          const cloudGeo = new THREE.SphereGeometry(r, 12, 12);
-          const cloudMat = new THREE.MeshStandardMaterial({
-            color: 0xfffff0, roughness: 1, transparent: true, opacity: 0.7,
-          });
-          const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-          cloud.position.set(
-            (Math.random() - 0.5) * 40,
-            -6 + Math.random() * 10,
-            (Math.random() - 0.5) * 30 - 5
-          );
-          cloud.scale.y = 0.4;
-          addArcObject(cloud);
+          const cloudGroup = new THREE.Group();
+          const cx = (Math.random() - 0.5) * 40;
+          const cy = -6 + Math.random() * 12;
+          const cz = (Math.random() - 0.5) * 30 - 5;
+          for (let j = 0; j < 3; j++) {
+            const r = 2 + Math.random() * 3;
+            const cloudGeo = new THREE.SphereGeometry(r, 12, 12);
+            const cloudMat = new THREE.MeshStandardMaterial({
+              color: 0xfffacd, roughness: 1, transparent: true, opacity: 0.75,
+            });
+            const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+            cloud.position.set(j * 2 - 2 + Math.random(), Math.random() * 0.5, Math.random());
+            cloud.scale.y = 0.4;
+            cloudGroup.add(cloud);
+          }
+          cloudGroup.position.set(cx, cy, cz);
+          addArcObject(cloudGroup);
+          cloudPositions.push({ obj: cloudGroup, baseY: cy });
         }
 
         const ruinGroup = new THREE.Group();
-        for (let i = 0; i < 5; i++) {
-          const boxGeo = new THREE.BoxGeometry(1.5, 2 + Math.random() * 3, 1.5);
+        for (let i = 0; i < 7; i++) {
+          const h = 2 + Math.random() * 4;
+          const boxGeo = new THREE.BoxGeometry(1.2, h, 1.2);
           const boxMat = new THREE.MeshStandardMaterial({
-            color: 0xdaa520, emissive: 0xffcd00, emissiveIntensity: 0.15, metalness: 0.5,
+            color: 0xdaa520, emissive: 0xffcd00, emissiveIntensity: 0.2, metalness: 0.5,
           });
           const box = new THREE.Mesh(boxGeo, boxMat);
-          box.position.set(
-            (Math.random() - 0.5) * 8,
-            -5 + Math.random() * 2,
-            (Math.random() - 0.5) * 8
-          );
+          box.position.set((Math.random() - 0.5) * 10, -5 + h / 2, (Math.random() - 0.5) * 10);
           ruinGroup.add(box);
         }
         addArcObject(ruinGroup);
 
+        const moteCount = 800;
+        const moteGeo = new THREE.BufferGeometry();
+        const motePos = new Float32Array(moteCount * 3);
+        for (let i = 0; i < moteCount; i++) {
+          motePos[i * 3] = (Math.random() - 0.5) * 50;
+          motePos[i * 3 + 1] = Math.random() * 30 - 10;
+          motePos[i * 3 + 2] = (Math.random() - 0.5) * 50;
+        }
+        moteGeo.setAttribute("position", new THREE.BufferAttribute(motePos, 3));
+        const moteMat = new THREE.PointsMaterial({
+          color: 0xf0e68c, size: 0.15, transparent: true, opacity: 0.7,
+        });
+        const motes = new THREE.Points(moteGeo, moteMat);
+        addArcObject(motes);
+
         arcAnimateFn = (t: number) => {
-          arcObjects.forEach((obj: any) => {
-            if (obj.isMesh && obj.geometry?.type === "SphereGeometry") {
-              obj.position.y += Math.sin(t * 0.3 + obj.position.x) * 0.003;
-            }
-          });
-          ruinGroup.rotation.y += 0.001;
+          for (const cp of cloudPositions) {
+            cp.obj.position.y = cp.baseY + Math.sin(t * 0.3 + cp.baseY) * 0.5;
+          }
+          ruinGroup.rotation.y = Math.sin(t * 0.15) * 0.08;
+          const mp = motes.geometry.attributes.position;
+          for (let i = 0; i < mp.count; i++) {
+            mp.setY(i, mp.getY(i) + 0.02);
+            mp.setX(i, mp.getX(i) + Math.sin(t * 0.4 + i * 0.1) * 0.005);
+            if (mp.getY(i) > 20) mp.setY(i, -10);
+          }
+          mp.needsUpdate = true;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 4: WATER 7 ────────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildWater7 = () => {
-        const amb = new THREE.AmbientLight(0x708090, 1.0);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x0a0a1f);
+        scene.fog = new THREE.FogExp2(0x0a0a1f, 0.01);
+
+        addArcObject(new THREE.AmbientLight(0x708090, 1.0));
         const dir = new THREE.DirectionalLight(0xb0c4de, 1.2);
         dir.position.set(0, 15, 5);
         addArcObject(dir);
+        const stormPt = new THREE.PointLight(0x4169e1, 0.6, 30);
+        stormPt.position.set(0, 10, 0);
+        addArcObject(stormPt);
 
         const waterGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
         const waterMat = new THREE.MeshPhongMaterial({
@@ -481,19 +543,37 @@ export default function OnePiece() {
         const origZ: number[] = [];
         for (let i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
 
-        const archGeo = new THREE.TorusGeometry(4, 0.4, 8, 20, Math.PI);
         const archMat = new THREE.MeshStandardMaterial({ color: 0x708090, roughness: 0.6 });
-        const arch = new THREE.Mesh(archGeo, archMat);
-        arch.position.set(0, -2, -5);
-        addArcObject(arch);
-
         for (let i = 0; i < 3; i++) {
-          const towerGeo = new THREE.CylinderGeometry(0.8, 1, 6 + Math.random() * 4, 8);
-          const towerMat = new THREE.MeshStandardMaterial({ color: 0x2f4f4f });
+          const archGeo = new THREE.TorusGeometry(3 + i * 0.5, 0.35, 8, 20, Math.PI);
+          const arch = new THREE.Mesh(archGeo, archMat.clone());
+          arch.position.set(-8 + i * 8, -2, -5 - i * 3);
+          addArcObject(arch);
+        }
+
+        for (let i = 0; i < 5; i++) {
+          const h = 6 + Math.random() * 5;
+          const towerGeo = new THREE.CylinderGeometry(0.7, 1, h, 8);
+          const towerMat = new THREE.MeshStandardMaterial({ color: 0x708090, roughness: 0.7 });
           const tower = new THREE.Mesh(towerGeo, towerMat);
-          tower.position.set(-6 + i * 6, -3, -8);
+          tower.position.set(-10 + i * 5, -8 + h / 2, -8 - Math.random() * 5);
           addArcObject(tower);
         }
+
+        const rainCount = 300;
+        const rainGeo = new THREE.BufferGeometry();
+        const rainPos = new Float32Array(rainCount * 3);
+        for (let i = 0; i < rainCount; i++) {
+          rainPos[i * 3] = (Math.random() - 0.5) * 60;
+          rainPos[i * 3 + 1] = Math.random() * 40 - 5;
+          rainPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
+        const rainMat = new THREE.PointsMaterial({
+          color: 0xb0c4de, size: 0.08, transparent: true, opacity: 0.7,
+        });
+        const rain = new THREE.Points(rainGeo, rainMat);
+        addArcObject(rain);
 
         arcAnimateFn = (t: number) => {
           for (let i = 0; i < posAttr.count; i++) {
@@ -503,24 +583,40 @@ export default function OnePiece() {
           }
           posAttr.needsUpdate = true;
           water.geometry.computeVertexNormals();
+          const rp = rain.geometry.attributes.position;
+          for (let i = 0; i < rp.count; i++) {
+            rp.setY(i, rp.getY(i) - 0.4);
+            if (rp.getY(i) < -8) rp.setY(i, 35);
+          }
+          rp.needsUpdate = true;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 5: MARINEFORD ─────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildMarineford = () => {
-        const amb = new THREE.AmbientLight(0x1c1c1c, 0.4);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x0d0000);
+        scene.fog = new THREE.FogExp2(0x1c0000, 0.02);
+
+        addArcObject(new THREE.AmbientLight(0x1c1c1c, 0.4));
         const fire = new THREE.SpotLight(0xff4500, 2.0, 50, Math.PI / 3);
         fire.position.set(0, 15, 5);
         addArcObject(fire);
         for (let i = 0; i < 4; i++) {
           const rPt = new THREE.PointLight(0xd70000, 1.5, 20);
-          rPt.position.set((Math.random() - 0.5) * 20, Math.random() * 5, (Math.random() - 0.5) * 20);
+          rPt.position.set(
+            (Math.random() - 0.5) * 25,
+            Math.random() * 5 - 2,
+            (Math.random() - 0.5) * 25
+          );
           addArcObject(rPt);
         }
 
         const groundGeo = new THREE.PlaneGeometry(200, 200, 40, 40);
         const groundMat = new THREE.MeshStandardMaterial({
-          color: 0x2f2f2f, roughness: 1, flatShading: true,
+          color: 0x1c1c1c, roughness: 1, flatShading: true,
         });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
@@ -528,31 +624,43 @@ export default function OnePiece() {
         addArcObject(ground);
         const gPos = ground.geometry.attributes.position;
         for (let i = 0; i < gPos.count; i++) {
-          gPos.setZ(i, (Math.random() - 0.5) * 2);
+          gPos.setZ(i, (Math.random() - 0.5) * 3);
         }
         gPos.needsUpdate = true;
         ground.geometry.computeVertexNormals();
 
-        for (let i = 0; i < 8; i++) {
-          const debrisGeo = new THREE.BoxGeometry(
-            0.5 + Math.random() * 2,
-            0.5 + Math.random() * 2,
-            0.5 + Math.random() * 2
-          );
+        for (let i = 0; i < 10; i++) {
+          const s = 0.5 + Math.random() * 2;
+          const debrisGeo = new THREE.BoxGeometry(s, s, s);
           const debrisMat = new THREE.MeshStandardMaterial({
-            color: 0x2f2f2f, emissive: 0x8b0000, emissiveIntensity: 0.3,
+            color: 0x2f2f2f, emissive: 0x8b0000, emissiveIntensity: 0.35,
           });
           const debris = new THREE.Mesh(debrisGeo, debrisMat);
           debris.position.set(
             (Math.random() - 0.5) * 30,
-            -7 + Math.random() * 3,
+            -7 + Math.random() * 4,
             (Math.random() - 0.5) * 30
           );
-          debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+          debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random());
           addArcObject(debris);
         }
 
-        const smokeCount = 1000;
+        const emberCount = 2000;
+        const emberGeo = new THREE.BufferGeometry();
+        const emberPos = new Float32Array(emberCount * 3);
+        for (let i = 0; i < emberCount; i++) {
+          emberPos[i * 3] = (Math.random() - 0.5) * 60;
+          emberPos[i * 3 + 1] = Math.random() * 20 - 8;
+          emberPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPos, 3));
+        const emberMat = new THREE.PointsMaterial({
+          color: 0xff4500, size: 0.15, transparent: true, opacity: 0.8,
+        });
+        const embers = new THREE.Points(emberGeo, emberMat);
+        addArcObject(embers);
+
+        const smokeCount = 500;
         const smokeGeo = new THREE.BufferGeometry();
         const smokePos = new Float32Array(smokeCount * 3);
         for (let i = 0; i < smokeCount; i++) {
@@ -562,60 +670,83 @@ export default function OnePiece() {
         }
         smokeGeo.setAttribute("position", new THREE.BufferAttribute(smokePos, 3));
         const smokeMat = new THREE.PointsMaterial({
-          color: 0x8b0000, size: 0.3, transparent: true, opacity: 0.4,
+          color: 0x555555, size: 0.4, transparent: true, opacity: 0.3,
         });
         const smoke = new THREE.Points(smokeGeo, smokeMat);
         addArcObject(smoke);
 
         arcAnimateFn = (t: number) => {
-          smoke.rotation.y += 0.001;
+          const ep = embers.geometry.attributes.position;
+          for (let i = 0; i < ep.count; i++) {
+            ep.setY(i, ep.getY(i) + 0.04 + Math.random() * 0.02);
+            ep.setX(i, ep.getX(i) + Math.sin(t + i * 0.5) * 0.01);
+            if (ep.getY(i) > 15) ep.setY(i, -8);
+          }
+          ep.needsUpdate = true;
           const sp = smoke.geometry.attributes.position;
           for (let i = 0; i < sp.count; i++) {
-            sp.setY(i, sp.getY(i) + 0.015);
-            if (sp.getY(i) > 15) sp.setY(i, -5);
+            sp.setY(i, sp.getY(i) + 0.02);
+            sp.setX(i, sp.getX(i) + Math.sin(t * 0.3 + i) * 0.008);
+            sp.setZ(i, sp.getZ(i) + Math.cos(t * 0.3 + i) * 0.008);
+            if (sp.getY(i) > 15) {
+              sp.setY(i, -5);
+              sp.setX(i, (Math.random() - 0.5) * 50);
+              sp.setZ(i, (Math.random() - 0.5) * 50);
+            }
           }
           sp.needsUpdate = true;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 6: DRESSROSA ──────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildDressrosa = () => {
-        const amb = new THREE.AmbientLight(0xee82ee, 0.8);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x1a0020);
+        scene.fog = new THREE.FogExp2(0x1a0020, 0.006);
+
+        addArcObject(new THREE.AmbientLight(0xee82ee, 0.8));
         const dir = new THREE.DirectionalLight(0xffcd00, 1.0);
         dir.position.set(5, 12, 5);
         addArcObject(dir);
-        const pinkPt = new THREE.PointLight(0xff69b4, 1.5, 30);
+        const pinkPt = new THREE.PointLight(0xff69b4, 1.5, 35);
         pinkPt.position.set(0, 5, 0);
         addArcObject(pinkPt);
+        const purplePt = new THREE.PointLight(0x9370db, 0.8, 25);
+        purplePt.position.set(-5, 3, 5);
+        addArcObject(purplePt);
 
-        const coloGeo = new THREE.TorusGeometry(6, 1, 8, 30);
+        const coloGeo = new THREE.TorusGeometry(6, 1, 12, 40);
         const coloMat = new THREE.MeshStandardMaterial({
-          color: 0x9370db, roughness: 0.5, metalness: 0.3,
+          color: 0xee82ee, roughness: 0.5, metalness: 0.3,
+          emissive: 0xee82ee, emissiveIntensity: 0.1,
         });
         const colosseum = new THREE.Mesh(coloGeo, coloMat);
         colosseum.position.set(0, -4, -5);
         colosseum.rotation.x = Math.PI / 2;
         addArcObject(colosseum);
 
-        const cageGeo = new THREE.IcosahedronGeometry(12, 1);
+        const cageGeo = new THREE.IcosahedronGeometry(14, 1);
         const cageMat = new THREE.MeshStandardMaterial({
-          color: 0xff6347, wireframe: true, transparent: true, opacity: 0.25,
+          color: 0x9370db, wireframe: true, transparent: true, opacity: 0.2,
+          emissive: 0x9370db, emissiveIntensity: 0.15,
         });
         const cage = new THREE.Mesh(cageGeo, cageMat);
         cage.position.set(0, 2, -5);
         addArcObject(cage);
 
-        const petalCount = 2000;
+        const petalCount = 2500;
         const petalGeo = new THREE.BufferGeometry();
         const petalPos = new Float32Array(petalCount * 3);
         for (let i = 0; i < petalCount; i++) {
-          petalPos[i * 3] = (Math.random() - 0.5) * 60;
-          petalPos[i * 3 + 1] = Math.random() * 30 - 10;
-          petalPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+          petalPos[i * 3] = (Math.random() - 0.5) * 70;
+          petalPos[i * 3 + 1] = Math.random() * 35 - 10;
+          petalPos[i * 3 + 2] = (Math.random() - 0.5) * 70;
         }
         petalGeo.setAttribute("position", new THREE.BufferAttribute(petalPos, 3));
         const petalMat = new THREE.PointsMaterial({
-          color: 0xff69b4, size: 0.2, transparent: true, opacity: 0.7,
+          color: 0xff69b4, size: 0.18, transparent: true, opacity: 0.7,
         });
         const petals = new THREE.Points(petalGeo, petalMat);
         addArcObject(petals);
@@ -623,91 +754,116 @@ export default function OnePiece() {
         arcAnimateFn = (t: number) => {
           cage.rotation.y += 0.002;
           cage.rotation.x += 0.001;
+          colosseum.rotation.z = Math.sin(t * 0.2) * 0.05;
           const pp = petals.geometry.attributes.position;
           for (let i = 0; i < pp.count; i++) {
-            pp.setY(i, pp.getY(i) - 0.02);
-            pp.setX(i, pp.getX(i) + Math.sin(t + i * 0.1) * 0.01);
-            if (pp.getY(i) < -10) pp.setY(i, 20);
+            pp.setY(i, pp.getY(i) - 0.025);
+            pp.setX(i, pp.getX(i) + Math.sin(t * 0.7 + i * 0.08) * 0.015);
+            pp.setZ(i, pp.getZ(i) + Math.cos(t * 0.5 + i * 0.06) * 0.01);
+            if (pp.getY(i) < -10) pp.setY(i, 25);
           }
           pp.needsUpdate = true;
+          petals.rotation.y += 0.0003;
         };
       };
 
+      // ══════════════════════════════════════════════════════════════════════
+      // ── ARC 7: WANO ───────────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
       const buildWano = () => {
-        const amb = new THREE.AmbientLight(0x2f4f4f, 0.5);
-        addArcObject(amb);
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x0a0000, 0.015);
+
+        addArcObject(new THREE.AmbientLight(0x2f4f4f, 0.5));
         const bloodDir = new THREE.DirectionalLight(0xdc143c, 1.2);
         bloodDir.position.set(5, 10, 5);
         addArcObject(bloodDir);
         const moonPt = new THREE.PointLight(0xffffff, 1.0, 40);
         moonPt.position.set(-10, 15, 5);
         addArcObject(moonPt);
+        const firePt = new THREE.PointLight(0xdc143c, 0.6, 20);
+        firePt.position.set(3, 0, 5);
+        addArcObject(firePt);
 
         const pagodaGroup = new THREE.Group();
-        for (let i = 0; i < 4; i++) {
-          const tierW = 3 - i * 0.6;
-          const tierGeo = new THREE.BoxGeometry(tierW, 1.5, tierW);
+        for (let i = 0; i < 5; i++) {
+          const tierW = 3.5 - i * 0.55;
+          const tierGeo = new THREE.BoxGeometry(tierW, 1.3, tierW);
           const tierMat = new THREE.MeshStandardMaterial({
             color: i % 2 === 0 ? 0xdc143c : 0xf5f5dc, roughness: 0.6,
+            emissive: i % 2 === 0 ? 0xdc143c : 0x000000,
+            emissiveIntensity: i % 2 === 0 ? 0.15 : 0,
           });
           const tier = new THREE.Mesh(tierGeo, tierMat);
-          tier.position.y = i * 1.8;
+          tier.position.y = i * 1.6;
           pagodaGroup.add(tier);
         }
+        const roofGeo = new THREE.ConeGeometry(1.5, 2, 4);
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0xdc143c });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = 5 * 1.6 + 0.5;
+        pagodaGroup.add(roof);
         pagodaGroup.position.set(0, -5, -5);
         addArcObject(pagodaGroup);
 
         const toriiGroup = new THREE.Group();
-        const pillarGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 8);
-        const toriiMat = new THREE.MeshStandardMaterial({ color: 0xdc143c });
-        const lPillar = new THREE.Mesh(pillarGeo, toriiMat);
-        lPillar.position.set(-2.5, -3, 3);
-        toriiGroup.add(lPillar);
-        const rPillar = new THREE.Mesh(pillarGeo, toriiMat.clone());
-        rPillar.position.set(2.5, -3, 3);
-        toriiGroup.add(rPillar);
-        const beamGeo = new THREE.BoxGeometry(7, 0.3, 0.3);
+        const toriiMat = new THREE.MeshStandardMaterial({
+          color: 0xf5f5dc, roughness: 0.5,
+          emissive: 0xdc143c, emissiveIntensity: 0.05,
+        });
+        const pillarGeo = new THREE.CylinderGeometry(0.2, 0.2, 7, 8);
+        const lP = new THREE.Mesh(pillarGeo, toriiMat);
+        lP.position.set(-3, -2.5, 3);
+        toriiGroup.add(lP);
+        const rP = new THREE.Mesh(pillarGeo.clone(), toriiMat.clone());
+        rP.position.set(3, -2.5, 3);
+        toriiGroup.add(rP);
+        const archGeo = new THREE.TorusGeometry(3.2, 0.2, 8, 20, Math.PI);
+        const archTop = new THREE.Mesh(archGeo, toriiMat.clone());
+        archTop.position.set(0, 1, 3);
+        toriiGroup.add(archTop);
+        const beamGeo = new THREE.BoxGeometry(8, 0.25, 0.25);
         const beam = new THREE.Mesh(beamGeo, toriiMat.clone());
-        beam.position.set(0, 0, 3);
+        beam.position.set(0, -0.3, 3);
         toriiGroup.add(beam);
-        const beam2 = new THREE.Mesh(beamGeo.clone(), toriiMat.clone());
-        beam2.position.set(0, -0.7, 3);
-        beam2.scale.x = 0.85;
-        toriiGroup.add(beam2);
         addArcObject(toriiGroup);
 
-        const blossomCount = 1500;
+        for (let i = 0; i < 4; i++) {
+          const h = 8 + Math.random() * 8;
+          const w = 5 + Math.random() * 4;
+          const mtGeo = new THREE.BoxGeometry(w, h, w * 0.7);
+          const mtMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a2e, roughness: 0.95, flatShading: true,
+          });
+          const mt = new THREE.Mesh(mtGeo, mtMat);
+          mt.position.set(-18 + i * 12, -8 + h / 2 - 2, -20 - Math.random() * 10);
+          addArcObject(mt);
+        }
+
+        const blossomCount = 3000;
         const blossomGeo = new THREE.BufferGeometry();
         const blossomPos = new Float32Array(blossomCount * 3);
         for (let i = 0; i < blossomCount; i++) {
-          blossomPos[i * 3] = (Math.random() - 0.5) * 50;
-          blossomPos[i * 3 + 1] = Math.random() * 25 - 5;
-          blossomPos[i * 3 + 2] = (Math.random() - 0.5) * 50;
+          blossomPos[i * 3] = (Math.random() - 0.5) * 60;
+          blossomPos[i * 3 + 1] = Math.random() * 30 - 5;
+          blossomPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
         }
         blossomGeo.setAttribute("position", new THREE.BufferAttribute(blossomPos, 3));
         const blossomMat = new THREE.PointsMaterial({
-          color: 0xffb7c5, size: 0.18, transparent: true, opacity: 0.8,
+          color: 0xffb7c5, size: 0.15, transparent: true, opacity: 0.8,
         });
         const blossoms = new THREE.Points(blossomGeo, blossomMat);
         addArcObject(blossoms);
 
-        for (let i = 0; i < 3; i++) {
-          const mtGeo = new THREE.ConeGeometry(6 + Math.random() * 4, 10 + Math.random() * 6, 6);
-          const mtMat = new THREE.MeshStandardMaterial({
-            color: 0x2f4f4f, roughness: 0.9, flatShading: true,
-          });
-          const mt = new THREE.Mesh(mtGeo, mtMat);
-          mt.position.set(-15 + i * 15, -6, -20 - Math.random() * 10);
-          addArcObject(mt);
-        }
-
         arcAnimateFn = (t: number) => {
-          pagodaGroup.rotation.y = Math.sin(t * 0.2) * 0.05;
+          pagodaGroup.rotation.y = Math.sin(t * 0.15) * 0.04;
           const bp = blossoms.geometry.attributes.position;
           for (let i = 0; i < bp.count; i++) {
-            bp.setY(i, bp.getY(i) - 0.015);
-            bp.setX(i, bp.getX(i) + Math.sin(t * 0.5 + i * 0.05) * 0.008);
-            if (bp.getY(i) < -5) bp.setY(i, 20);
+            bp.setX(i, bp.getX(i) + 0.04 + Math.sin(t * 0.5 + i * 0.04) * 0.012);
+            bp.setY(i, bp.getY(i) - 0.01);
+            if (bp.getX(i) > 30) bp.setX(i, -30);
+            if (bp.getY(i) < -5) bp.setY(i, 25);
           }
           bp.needsUpdate = true;
         };
@@ -781,12 +937,8 @@ export default function OnePiece() {
               titleEl.style.color = arc.color;
               titleEl.style.textShadow = `0 0 20px ${hexToRgba(arc.color, 0.6)}, 0 0 40px ${hexToRgba(arc.color, 0.3)}, 0 0 80px ${hexToRgba(arc.color, 0.15)}`;
             }
-            if (tagEl) {
-              tagEl.textContent = arc.tagline;
-            }
-            if (promptEl) {
-              promptEl.textContent = arc.prompt;
-            }
+            if (tagEl) tagEl.textContent = arc.tagline;
+            if (promptEl) promptEl.textContent = arc.prompt;
 
             gsap.fromTo(
               titleContainer,
@@ -798,15 +950,14 @@ export default function OnePiece() {
       };
 
       // ══════════════════════════════════════════════════════════════════════
-      // ── CLICK HANDLER (ARC NAVIGATION) ────────────────────────────────────
+      // ── CLICK HANDLER — INFINITE LOOP NAV ─────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
       const onWindowClick = () => {
         if (isTransitioning) return;
-        if (currentArcIndex >= ARCS.length - 1) return;
 
         isTransitioning = true;
-        const nextIndex = currentArcIndex + 1;
+        const nextIndex = (currentArcIndex + 1) % ARCS.length;
 
         gsap.to(camera.position, {
           z: camera.position.z - 30,
@@ -839,10 +990,6 @@ export default function OnePiece() {
         targetY = -(e.clientY / window.innerHeight - 0.5) * 2;
       };
       window.addEventListener("mousemove", onMouseMove);
-
-      // ══════════════════════════════════════════════════════════════════════
-      // ── RESIZE ────────────────────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
 
       const onResize = () => {
         const w = window.innerWidth;
@@ -881,13 +1028,8 @@ export default function OnePiece() {
         }
       };
 
-      // ── Load initial scene & start loop ─────────────────────────────────
       loadArcScene(0);
       animate();
-
-      // ══════════════════════════════════════════════════════════════════════
-      // ── CLEANUP ───────────────────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
 
       (mountRef.current as any).__cleanup = () => {
         cancelAnimationFrame(animFrameId);

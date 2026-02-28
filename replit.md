@@ -29,6 +29,9 @@ Preferred communication style: Simple, everyday language.
 - **Animation**: GSAP loaded from CDN for camera animations and cinematic transitions
 - **Pattern**: All 3D libraries are loaded as global `window.*` variables (not npm imports), because the PRD specifies zero-build-tool compatibility and CDN delivery
 - **Canvas**: Three.js renders to a full-screen WebGL canvas. React acts as a thin mount point via `useRef` and `useEffect`
+- **Arc System**: 8 unique 3D scenes (Grand Line, East Blue, Alabasta, Skypiea, Water 7, Marineford, Dressrosa, Wano). Each builder sets scene.background, scene.fog, custom geometry, particles, and lighting. Click navigation uses GSAP camera zoom (z - 30, 1.4s power3.inOut) with infinite loop wrapping via modulo. All arc objects tracked in `arcObjects[]` for proper disposal on scene change.
+- **`arcAnimateFn`**: Per-arc callback for per-frame animation (ocean waves, particle drift, cage rotation, etc.)
+- **`window.__threejsState`**: Exposes scene, camera, renderer, composer, clock, THREE, gsap, bloomPass, getCurrentArc, loadArcScene, updateUI, clearScene for future prompt extensions
 
 ### Backend
 

@@ -1,0 +1,37 @@
+Build all 8 arc builder functions. Each adds objects to arcObjects array for cleanup.
+Use the exact colors and geometry:
+
+buildGrandLine(): already built — ocean + torus + stars (just make sure it registers in arcObjects)
+
+buildEastBlue(): sky background #87CEEB, calm ocean #20B2AA low waves amplitude 0.3,
+CylinderGeometry island with ConeGeometry trees, 500 white foam particle Points drifting left
+
+buildAlabasta(): background #1a0a00, desert PlaneGeometry tan #C2956C with bumps,
+ConeGeometry pyramids #DAA520, 1500 sand Points #D2691E sweeping horizontally,
+harsh orange DirectionalLight #FF8C00
+
+buildSkypiea(): background #87CEEB, 6 fluffy SphereGeometry cloud islands at varying heights
+color #FFFACD, BoxGeometry golden ruins #DAA520, bright golden SpotLight sun,
+800 gold light mote Points #F0E68C floating upward, bloom very high
+
+buildWater7(): background #0a0a1f, canal water #4169E1, TorusGeometry gothic arches grey,
+CylinderGeometry stone towers #708090, 300 rain Points #B0C4DE falling fast downward,
+heavy FilmPass grain feel
+
+buildMarineford(): background #0d0000, cracked PlaneGeometry dark #1C1C1C,
+4 red PointLights #D70000 scattered for fire glow, BoxGeometry burning debris,
+2000 ember Points #FF4500 rising upward, 500 smoke Points #555555 expanding,
+THREE.FogExp2(0x1C0000, 0.02) for red fog
+
+buildDressrosa(): background #1a0020, TorusGeometry colosseum ring #EE82EE,
+IcosahedronGeometry wireframe birdcage #9370DB large, 2500 petal Points #FF69B4
+falling diagonally with rotation, pink PointLight fill, golden sun DirectionalLight
+
+buildWano(): background #000000, BoxGeometry pagoda towers stacked red #DC143C,
+TorusGeometry torii gate arch cream #F5F5DC, mountain silhouette BoxGeometry dark,
+3000 cherry blossom Points #FFB7C5 wind-swept horizontally, moonlight white PointLight,
+THREE.FogExp2(0x0a0000, 0.015)
+
+I HAVE UPLOADED THE PRD FOR THE APP FOR YOUR REFERENCE AND WILL MAKE THE WHOLE WEBSITE STEP BY STEP, THIS IS PROMPT 1
+
+ALSO MAKE A CHANGE LIKE AFTER THE LAST ARC IF THE USER CLICKS AGAIN IT SHOULD GO BACK TO FIRST ARC, SO THERE IS KIND OF INFINITE LOOP EVEN IF THE USER CLICKS AS MUCH TIME THEY WANTS.

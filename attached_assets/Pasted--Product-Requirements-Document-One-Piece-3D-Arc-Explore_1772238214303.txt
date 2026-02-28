@@ -1,0 +1,249 @@
+🏴‍☠️ Product Requirements Document
+One Piece 3D Arc Explorer — Portfolio Website
+1. Executive Summary
+Project Name: One Piece 3D Arc Explorer
+Type: Personal Fan Site / Portfolio Project
+Platform: Replit (Vanilla HTML + CSS + JavaScript)
+Owner: Personal (Portfolio Showcase)
+Target Completion: ASAP
+Version: 1.0
+
+This is a fully frontend, single-page 3D animated website inspired by the One Piece anime. The site uses a click-to-zoom cinematic navigation model, where each click takes the user deeper into a new One Piece arc — rendered in a unique 3D Three.js scene. The site is built to impress recruiters with advanced frontend animation skills.
+
+2. Problem Statement
+Portfolio websites for developers are often static, boring, and forgettable. This project solves that by creating a visually immersive, recruiter-stopping experience that demonstrates mastery of:
+
+3D WebGL rendering (Three.js)
+
+Cinematic camera animation (GSAP + lerp)
+
+Post-processing effects (Bloom, Film Grain)
+
+Scroll/click-driven storytelling
+
+UI layering over 3D canvas
+
+3. Goals & Objectives
+Goal	Description
+🎯 Portfolio Impact	Impress recruiters with a unique, memorable frontend experience
+🎯 Showcase 3D Skills	Demonstrate Three.js, WebGL, and animation capability
+🎯 Anime-Inspired Design	Capture One Piece's visual identity authentically per arc
+🎯 Performance	Smooth 60fps animations even on mid-range laptops
+🎯 Replit Deployable	Zero build tools — runs directly from a single index.html
+4. Target Users
+Primary: Technical recruiters and hiring managers viewing the portfolio
+Secondary: Fellow developers and One Piece fans discovering the site
+
+User Goal: Land on the page → be immediately impressed → explore arcs → associate the developer with creativity and technical depth.
+
+5. Core User Flow
+text
+Landing (Grand Line Ocean Scene)
+        ↓ [Click anywhere]
+Arc 1 – East Blue  →  Camera ZOOMS IN → New 3D Scene
+        ↓ [Click]
+Arc 2 – Alabasta   →  Camera ZOOMS IN → Desert Scene
+        ↓ [Click]
+Arc 3 – Skypiea    →  ZOOMS IN → Cloud/Sky Scene
+        ↓ [Click]
+Arc 4 – Water 7    →  ZOOMS IN → Water City Scene
+        ↓ [Click]
+Arc 5 – Marineford →  ZOOMS IN → War/Dark Sky Scene
+        ↓ [Click]
+Arc 6 – Dressrosa  →  ZOOMS IN → Petal Kingdom Scene
+        ↓ [Click]
+Arc 7 – Wano       →  ZOOMS IN → Samurai Japan Scene
+        ↓ [Click]
+Credits / End Screen → "The Adventure Continues..."
+6. Feature Requirements
+6.1 Must Have (MVP)
+ID	Feature	Description
+F01	3D Canvas Background	Full-screen Three.js WebGL canvas behind all UI, position: fixed, z-index: 0
+F02	Click-to-Zoom Navigation	Click anywhere → camera zooms forward via GSAP tween transitioning to next arc scene
+F03	Arc Scene Switcher	8 distinct Three.js scenes (Intro + 7 arcs), each with unique geometry, colors, and lighting
+F04	Mouse Parallax	Camera position/rotation lerps toward cursor for a floating, cinematic feel
+F05	Bloom / Glow Effect	EffectComposer + UnrealBloomPass for glowing edges and lights
+F06	Film Grain Overlay	FilmPass or custom shader for cinematic noise texture
+F07	Arc Title Overlay	HTML/CSS arc name + one-line description layered over canvas using z-index: 10
+F08	Click Prompt	Subtle pulsing "Click to Continue" text at the bottom
+F09	Idle Animation	Floating/bobbing position.y sine wave + slow Y-axis rotation on main 3D objects
+F10	Responsive Canvas	Canvas resizes on window resize, camera aspect ratio updates
+6.2 Nice to Have (Post-MVP)
+ID	Feature	Description
+F11	Arc Progress Indicator	Small dots or arc name breadcrumb showing current position (e.g. ● ○ ○ ○)
+F12	Ambient Sound	Subtle arc-themed ambient audio toggle (ocean waves, wind, etc.)
+F13	Transition Sound Effect	Short whoosh SFX on zoom click
+F14	Arc-Specific Particles	Floating particles themed per arc (sand, petals, snowflakes, sparks)
+F15	Back Navigation	Press Backspace or swipe to go to previous arc
+7. Arc Design Specifications
+Arc 0 — Grand Line (Intro)
+Property	Value
+Primary Colors	#FFCD00 Gold, #1a4a8a Deep Navy, #050a1a Dark BG
+3D Elements	Animated ocean PlaneGeometry with vertex wave shader, 2000-star Points field, spinning golden TorusGeometry (Straw Hat)
+Lighting	Ambient blue #1a2a5a, Directional gold #FFCD00, Red PointLight
+Atmosphere	Film grain ON, Bloom ON, Mouse parallax ON
+Title Text	"⚓ SET SAIL" + "The Grand Line awaits — click to begin"
+Arc 1 — East Blue
+Property	Value
+Official Color	#20B2AA (Light Sea Green / Teal) 
+​
+Supporting Colors	#87CEEB Sky Blue, #2E8B57 Sea Green, #FFFFFF White
+3D Elements	Calm ocean plane, small island CylinderGeometry with tree ConeGeometry, seagull TorusGeometry in sky
+Lighting	Warm daylight directional, soft teal ambient
+Atmosphere	Calm, bright, hopeful — low bloom intensity
+Title Text	"EAST BLUE" + "Where it all began. A boy with a dream and a straw hat."
+Arc 2 — Alabasta
+Property	Value
+Official Color	#DAA520 Goldenrod 
+​
+Supporting Colors	#C2956C Sandy Brown, #D2691E Chocolate, #FF8C00 Dark Orange
+3D Elements	Desert PlaneGeometry with sandy displacement, pyramid ConeGeometry, swirling sandstorm particle system (Points)
+Lighting	Harsh overhead DirectionalLight in orange, dim ambient
+Atmosphere	Dusty, warm, intense — medium bloom
+Title Text	"ALABASTA" + "A kingdom on the brink. Loyalty tested in the sands."
+Arc 3 — Skypiea
+Property	Value
+Official Color	#228B22 Forest Green 
+​
+Supporting Colors	#ADFF2F Green Yellow, #F0E68C Khaki, #FFFACD Lemon Chiffon
+3D Elements	Floating cloud islands (SphereGeometry + fluffy shader), golden ruins (BoxGeometry stacks), sun rays via SpotLight
+Lighting	Bright golden sun SpotLight, green ambient from jungle below
+Atmosphere	Lush, ethereal, floating — high bloom on clouds
+Title Text	"SKYPIEA" + "Above the clouds lies a golden city — and a god who demands tribute."
+Arc 4 — Water 7 / Enies Lobby
+Property	Value
+Official Color	#4169E1 Royal Blue 
+​
+Supporting Colors	#708090 Slate Grey, #B0C4DE Light Steel Blue, #2F4F4F Dark Slate
+3D Elements	Gothic arch TorusGeometry, canal water plane, stone tower CylinderGeometry stacks, courthouse silhouette BoxGeometry
+Lighting	Cool blue-grey ambient, white dramatic directional from above
+Atmosphere	Tense, dramatic, stormy — medium-high bloom, film grain intense
+Title Text	"WATER 7" + "A city of shipwrights. A crew torn apart. A reckoning at Enies Lobby."
+Arc 5 — Marineford
+Property	Value
+Official Color	#8B0000 Dark Red / #1C1C1C Near Black 
+​
+Supporting Colors	#D70000 Red, #FF4500 Orange Red, #2F2F2F Charcoal
+3D Elements	Cracked battlefield PlaneGeometry, burning debris BoxGeometry with red PointLights, warship silhouettes, smoke particle systems
+Lighting	Multiple red PointLights, near-zero ambient for darkness, fire-orange SpotLight
+Atmosphere	Most dramatic arc — maximum bloom, heavy film grain, red fog
+Title Text	"MARINEFORD" + "The war that changed the world. Nothing was ever the same."
+Arc 6 — Dressrosa
+Property	Value
+Official Color	#EE82EE Violet 
+​
+Supporting Colors	#FF69B4 Hot Pink, #9370DB Medium Purple, #FF6347 Tomato Red
+3D Elements	Colosseum ring TorusGeometry, falling petal particle system (pink Points), birdcage wire frame IcosahedronGeometry
+Lighting	Warm violet ambient, pink PointLight fills, golden DirectionalLight
+Atmosphere	Vibrant, chaotic beauty — high bloom on petals
+Title Text	"DRESSROSA" + "A kingdom of toys and lies — beneath the petals, a dictator's chains."
+Arc 7 — Wano
+Property	Value
+Official Color	#DC143C Crimson 
+​
+Supporting Colors	#F5F5DC Beige/Cream, #2F4F4F Dark Forest, #000000 Black
+3D Elements	Japanese pagoda BoxGeometry towers, cherry blossom particle system (white/pink Points), torii gate arch, mountain silhouettes
+Lighting	Blood-red DirectionalLight, dark ambient, white PointLight moonlight
+Atmosphere	Ukiyo-e art style feel — sharp bloom, low grain, high contrast 
+​
+Title Text	"WANO" + "An isolated nation under the shogun's shadow. The fire of revolution burns."
+8. 3D & Animation Technical Specification
+Based on the Solais website effect analysis:
+​
+
+8.1 Core Rendering Stack
+text
+Three.js r128+
+├── WebGLRenderer (antialias: true, alpha: true)
+├── PerspectiveCamera (FOV: 75)
+├── EffectComposer Pipeline
+│   ├── RenderPass (base scene)
+│   ├── UnrealBloomPass (strength: 1.2, threshold: 0.2, radius: 0.8)
+│   └── FilmPass (noise intensity: 0.25, scanlines: false)
+└── requestAnimationFrame render loop
+8.2 Camera Zoom Transition (Click Navigation)
+javascript
+// On click → GSAP tween camera forward, then swap scene
+gsap.to(camera.position, {
+  z: camera.position.z - 30,   // zoom into scene
+  duration: 1.4,
+  ease: "power3.inOut",
+  onComplete: () => loadNextArcScene()
+});
+8.3 Mouse Parallax
+javascript
+// Lerp camera toward mouse — smooth floating effect
+camera.position.x += (targetX - camera.position.x) * 0.05;
+camera.position.y += (targetY - camera.position.y) * 0.05;
+camera.lookAt(scene.position);
+8.4 Idle Animation Loop
+javascript
+// Applied to primary 3D object in each scene
+mesh.rotation.y += 0.003;
+mesh.position.y = Math.sin(clock.getElapsedTime() * 0.8) * 0.4;
+8.5 UI Layer Stack
+text
+z-index: 100  →  Click prompt ("Click to Continue")
+z-index: 10   →  Arc title + description (HTML/CSS)
+z-index: 5    →  Progress dots (arc indicator)
+z-index: 0    →  Three.js canvas (position: fixed)
+9. Typography & Global Styles
+Element	Font	Size	Color
+Arc Title	Pirata One (Google Fonts)	clamp(3rem, 8vw, 6rem)	Arc primary color
+Description	Cinzel	1.1rem	#acd6f5
+Click Prompt	Pirata One	1rem	White, 60% opacity, pulsing
+Body	Pirata One	1rem	#FFCD00
+Text Glow: text-shadow: 0 0 20px [arc primary color] on all headings
+Background: Always #050a1a deep navy-black (canvas sits on top)
+
+10. File Structure (Replit)
+text
+index.html          ← Entire site (single file)
+/assets
+  /fonts            ← Optional local font fallbacks
+  /audio            ← Ambient sounds (nice-to-have)
+README.md           ← Project description for GitHub
+Everything runs from one index.html — CDN links for Three.js, GSAP, and Google Fonts. No npm, no build step, no config files.
+
+11. Performance Requirements
+Metric	Target
+FPS	60fps on mid-range laptop GPU
+Initial Load	< 3 seconds on standard Wi-Fi
+Canvas Resolution	devicePixelRatio capped at 2
+Geometry Complexity	Max 100×100 segments per plane
+Particle Count	Max 3,000 points per scene
+Memory	Dispose previous scene geometry/materials on arc transition
+12. Browser Compatibility
+Browser	Support
+Chrome 90+	✅ Full
+Firefox 88+	✅ Full
+Safari 15+	✅ Full
+Edge 90+	✅ Full
+Mobile	⚠️ Reduced particles, touch-to-advance
+13. Out of Scope (v1.0)
+❌ User login / accounts
+
+❌ Backend / database
+
+❌ CMS or editable content
+
+❌ GLTF/GLB 3D character models (pure procedural geometry only)
+
+❌ Multi-language support
+
+❌ SEO optimization
+
+14. Success Metrics
+Metric	Definition of Success
+Recruiter Engagement	Visitor clicks through all 7 arcs in one session
+Visual Impression	Smooth 60fps, no stuttering on zoom transitions
+Portfolio Conversion	Recruiter contacts developer after viewing
+Code Quality	Single clean index.html, readable and commented
+15. Milestones
+Phase	Deliverable	Timeline
+Phase 1	Base Three.js canvas + ocean scene + bloom/grain	Day 1
+Phase 2	Click-to-zoom GSAP transition + scene manager	Day 2
+Phase 3	All 7 arc scenes with unique geometry + colors	Day 3–4
+Phase 4	Mouse parallax + idle animations + UI overlays	Day 5
+Phase 5	Arc particles, polish, performance tuning	Day 6
+Phase 6	Replit deploy + README + GitHub publish	Day 7

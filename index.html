@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>One Piece 3D Arc Explorer</title>
+  <meta name="description" content="An immersive 3D journey through the arcs of One Piece — a cinematic WebGL portfolio experience." />
+  <meta property="og:title" content="One Piece 3D Arc Explorer" />
+  <meta property="og:description" content="A cinematic portfolio website built with Three.js, GSAP, WebGL. Click to journey through each One Piece arc in 3D." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #050a1a;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #canvas-mount {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0; background: #050a1a; overflow: hidden;
+    }
+
+    #vignette {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 2; pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%);
+    }
+
+    #title-container {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10; text-align: center;
+      pointer-events: none; user-select: none;
+    }
+
+    #arc-title {
+      font-family: 'Pirata One', cursive;
+      font-size: clamp(3rem, 8vw, 6rem);
+      color: #FFCD00; margin: 0; line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 20px rgba(255,205,0,0.6), 0 0 40px rgba(255,205,0,0.3), 0 0 80px rgba(255,205,0,0.15);
+    }
+
+    #arc-tagline {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(0.85rem, 1.8vw, 1.1rem);
+      color: #acd6f5; margin: 1rem 0 0 0;
+      letter-spacing: 0.08em; line-height: 1.6;
+      text-shadow: 0 0 12px rgba(172,214,245,0.3);
+    }
+
+    #credits-container {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10; text-align: center;
+      display: none; flex-direction: column;
+      align-items: center; gap: 1.2rem;
+      user-select: none;
+    }
+
+    #credits-title {
+      font-family: 'Pirata One', cursive;
+      font-size: 2rem; color: #FFCD00;
+      text-shadow: 0 0 20px rgba(255,205,0,0.5), 0 0 40px rgba(255,205,0,0.25);
+    }
+
+    #credits-author {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem; color: #62C3F8;
+      text-shadow: 0 0 12px rgba(98,195,248,0.3);
+    }
+
+    #credits-tech {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem; color: #888;
+      letter-spacing: 0.1em;
+    }
+
+    #credits-portfolio-link {
+      font-family: 'Pirata One', cursive;
+      font-size: 1rem; color: #D70000;
+      text-decoration: none; pointer-events: auto;
+      text-shadow: 0 0 10px rgba(215,0,0,0.3);
+      transition: text-shadow 0.3s ease, color 0.3s ease;
+      margin-top: 0.5rem;
+    }
+    #credits-portfolio-link:hover {
+      color: #FF2020;
+      text-shadow: 0 0 15px rgba(215,0,0,0.7), 0 0 30px rgba(215,0,0,0.4), 0 0 50px rgba(215,0,0,0.2);
+    }
+
+    #progress-dots {
+      position: fixed; bottom: 2rem; right: 2rem;
+      z-index: 100; display: flex; flex-direction: column;
+      gap: 10px; align-items: center; pointer-events: none;
+    }
+
+    .progress-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 1.5px solid #FFCD00; background-color: transparent;
+      transition: all 0.4s ease;
+    }
+    .progress-dot.active {
+      width: 12px; height: 12px;
+      background-color: #FFCD00;
+      box-shadow: 0 0 8px rgba(255,205,0,0.7), 0 0 16px rgba(255,205,0,0.35);
+    }
+
+    #click-prompt-container {
+      position: fixed; bottom: 2.5rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 100; text-align: center;
+      pointer-events: none; user-select: none;
+    }
+
+    #click-prompt {
+      font-family: 'Pirata One', cursive;
+      font-size: 1rem; color: rgba(255,255,255,0.6);
+      letter-spacing: 0.1em; display: inline-block;
+      animation: pulse-prompt 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-prompt {
+      0%, 100% { opacity: 1.0; }
+      50% { opacity: 0.4; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-mount" data-testid="threejs-canvas-mount"></div>
+  <div id="vignette" data-testid="vignette-overlay"></div>
+
+  <div id="title-container" data-testid="arc-title-container">
+    <h1 id="arc-title" data-testid="arc-title">SET SAIL</h1>
+    <p id="arc-tagline" data-testid="arc-tagline">The Grand Line awaits — click to begin</p>
+  </div>
+
+  <div id="credits-container" data-testid="credits-container">
+    <div data-credit-line id="credits-title" data-testid="credits-title">The Adventure Continues...</div>
+    <div data-credit-line id="credits-author" data-testid="credits-author">Built by [Your Name]</div>
+    <div data-credit-line id="credits-tech" data-testid="credits-tech">Three.js · GSAP · WebGL · Replit</div>
+    <a data-credit-line data-credits-link id="credits-portfolio-link" data-testid="credits-portfolio-link"
+       href="#" target="_blank" rel="noopener noreferrer">View My Portfolio →</a>
+  </div>
+
+  <div id="progress-dots" data-testid="progress-dots"></div>
+
+  <div id="click-prompt-container" data-testid="click-prompt">
+    <span id="click-prompt">Click anywhere to set sail</span>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FilmShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/FilmPass.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <script>
+    (function () {
+      var ARCS = [
+        { title: "SET SAIL", tagline: "The Grand Line awaits \u2014 click to begin", color: "#FFCD00", bloom: [1.4, 0.8, 0.2], prompt: "Click anywhere to set sail" },
+        { title: "EAST BLUE", tagline: "Where it all began. A boy, a dream, a straw hat.", color: "#20B2AA", bloom: [0.6, 0.5, 0.3], prompt: "Click to continue the voyage" },
+        { title: "ALABASTA", tagline: "A kingdom on the brink. Loyalty tested in the sands.", color: "#DAA520", bloom: [1.0, 0.6, 0.25], prompt: "Click to cross the desert" },
+        { title: "SKYPIEA", tagline: "Above the clouds lies a golden city \u2014 and a god.", color: "#228B22", bloom: [1.8, 1.0, 0.15], prompt: "Click to ascend" },
+        { title: "WATER 7", tagline: "A crew torn apart. A reckoning at Enies Lobby.", color: "#4169E1", bloom: [1.2, 0.7, 0.2], prompt: "Click to face the storm" },
+        { title: "MARINEFORD", tagline: "The war that changed the world. Nothing was ever the same.", color: "#8B0000", bloom: [2.0, 1.2, 0.1], prompt: "Click to enter the war" },
+        { title: "DRESSROSA", tagline: "Beneath the petals, a dictator\u2019s chains.", color: "#EE82EE", bloom: [1.5, 0.9, 0.18], prompt: "Click to shatter the cage" },
+        { title: "WANO", tagline: "An isolated nation under the shogun\u2019s shadow.", color: "#DC143C", bloom: [1.6, 0.7, 0.2], prompt: "Click to ignite the dawn" }
+      ];
+
+      function hexToRgba(hex, alpha) {
+        var r = parseInt(hex.slice(1, 3), 16);
+        var g = parseInt(hex.slice(3, 5), 16);
+        var b = parseInt(hex.slice(5, 7), 16);
+        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+      }
+
+      var dotsContainer = document.getElementById("progress-dots");
+      for (var i = 0; i < ARCS.length; i++) {
+        var dot = document.createElement("div");
+        dot.className = "progress-dot" + (i === 0 ? " active" : "");
+        dot.setAttribute("data-dot", "");
+        dot.setAttribute("data-testid", "progress-dot-" + i);
+        dot.title = ARCS[i].title;
+        dotsContainer.appendChild(dot);
+      }
+
+      var mountEl = document.getElementById("canvas-mount");
+      var titleContainerEl = document.getElementById("title-container");
+      var titleEl = document.getElementById("arc-title");
+      var taglineEl = document.getElementById("arc-tagline");
+      var promptEl = document.getElementById("click-prompt");
+      var promptContainerEl = document.getElementById("click-prompt-container");
+      var dotsEl = document.getElementById("progress-dots");
+      var creditsEl = document.getElementById("credits-container");
+
+      var THREE = window.THREE;
+      var gsap = window.gsap;
+
+      var isMobile = window.innerWidth < 768;
+      var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      function pc(count) { return isMobile ? Math.ceil(count * 0.25) : count; }
+      var oceanSeg = isMobile ? 40 : 60;
+      var oceanSegHigh = isMobile ? 40 : 80;
+
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050a1a);
+      scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
+
+      var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ReinhardToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      mountEl.appendChild(renderer.domElement);
+
+      var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 4, 20);
+
+      var composer = null;
+      var bloomPass = null;
+      try {
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+        bloomPass = new THREE.UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          ARCS[0].bloom[0], ARCS[0].bloom[1], ARCS[0].bloom[2]
+        );
+        composer.addPass(bloomPass);
+        var filmPass = new THREE.FilmPass(0.25, 0.0, 648, false);
+        filmPass.renderToScreen = true;
+        composer.addPass(filmPass);
+      } catch (e) {
+        console.warn("[OnePiece] Post-processing unavailable:", e);
+        composer = null;
+      }
+
+      var clock = new THREE.Clock();
+
+      var currentArcIndex = 0;
+      var isTransitioning = false;
+      var showingCredits = false;
+      var arcObjects = [];
+      var arcAnimateFn = null;
+
+      var starCount = 2000;
+      var starGeo = new THREE.BufferGeometry();
+      var starPositions = new Float32Array(starCount * 3);
+      for (var i = 0; i < starCount; i++) {
+        starPositions[i * 3] = (Math.random() - 0.5) * 400;
+        starPositions[i * 3 + 1] = (Math.random() - 0.5) * 400;
+        starPositions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+      }
+      starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+      var starMat = new THREE.PointsMaterial({
+        color: 0xffffff, size: 0.4, transparent: true, opacity: 0.85, sizeAttenuation: true
+      });
+      var stars = new THREE.Points(starGeo, starMat);
+      scene.add(stars);
+
+      function clearScene() {
+        for (var i = 0; i < arcObjects.length; i++) {
+          var obj = arcObjects[i];
+          scene.remove(obj);
+          if (obj.traverse) {
+            obj.traverse(function (child) {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(function (m) { m.dispose(); });
+                else child.material.dispose();
+              }
+            });
+          }
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach(function (m) { m.dispose(); });
+            else obj.material.dispose();
+          }
+        }
+        arcObjects = [];
+        arcAnimateFn = null;
+        scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
+      }
+
+      function addArcObject(obj) {
+        arcObjects.push(obj);
+        scene.add(obj);
+      }
+
+      function buildGrandLine() {
+        scene.background = new THREE.Color(0x050a1a);
+        scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
+
+        var oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSegHigh, oceanSegHigh);
+        var oceanMat = new THREE.MeshPhongMaterial({
+          color: 0x1a4a8a, shininess: 60, specular: 0x4488cc,
+          side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.9
+        });
+        var ocean = new THREE.Mesh(oceanGeo, oceanMat);
+        ocean.rotation.x = -Math.PI / 2;
+        ocean.position.y = -8;
+        addArcObject(ocean);
+
+        var posAttr = ocean.geometry.attributes.position;
+        var origZ = [];
+        for (var i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
+
+        var torusGeo = new THREE.TorusGeometry(3, 0.3, 16, 100);
+        var torusMat = new THREE.MeshStandardMaterial({
+          color: 0xffcd00, emissive: 0xd70000, emissiveIntensity: 0.4,
+          metalness: 0.7, roughness: 0.25
+        });
+        var torus = new THREE.Mesh(torusGeo, torusMat);
+        torus.position.set(0, 2, 0);
+        addArcObject(torus);
+
+        addArcObject(new THREE.AmbientLight(0x1a2a5a, 1.5));
+        var dir = new THREE.DirectionalLight(0xffcd00, 1);
+        dir.position.set(5, 10, 5);
+        addArcObject(dir);
+        var pt = new THREE.PointLight(0xd70000, 2, 30);
+        pt.position.set(-5, 3, 0);
+        addArcObject(pt);
+
+        arcAnimateFn = function (t) {
+          for (var i = 0; i < posAttr.count; i++) {
+            var x = posAttr.getX(i);
+            var y = posAttr.getY(i);
+            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.3 + t) * 1.2 + Math.cos(y * 0.3 + t * 0.8) * 0.8);
+          }
+          posAttr.needsUpdate = true;
+          ocean.geometry.computeVertexNormals();
+          torus.rotation.y += 0.003;
+          torus.rotation.x += 0.001;
+          torus.position.y = 2 + Math.sin(t * 0.8) * 0.4;
+        };
+      }
+
+      function buildEastBlue() {
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.005);
+
+        addArcObject(new THREE.AmbientLight(0x87ceeb, 1.2));
+        var dir = new THREE.DirectionalLight(0xffffff, 1.0);
+        dir.position.set(5, 10, 5);
+        addArcObject(dir);
+        var warmPt = new THREE.PointLight(0x20b2aa, 0.8, 40);
+        warmPt.position.set(0, 5, 5);
+        addArcObject(warmPt);
+
+        var oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
+        var oceanMat = new THREE.MeshPhongMaterial({
+          color: 0x20b2aa, shininess: 80, specular: 0x87ceeb,
+          side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.85
+        });
+        var ocean = new THREE.Mesh(oceanGeo, oceanMat);
+        ocean.rotation.x = -Math.PI / 2;
+        ocean.position.y = -8;
+        addArcObject(ocean);
+        var posAttr = ocean.geometry.attributes.position;
+        var origZ = [];
+        for (var i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
+
+        var islandGeo = new THREE.CylinderGeometry(3, 4, 2, 16);
+        var islandMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
+        var island = new THREE.Mesh(islandGeo, islandMat);
+        island.position.set(0, -7, 0);
+        addArcObject(island);
+
+        var trunkGeo = new THREE.CylinderGeometry(0.2, 0.25, 2.5, 8);
+        var trunkMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+        var trunk1 = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk1.position.set(0, -5.5, 0);
+        addArcObject(trunk1);
+        var trunk2 = new THREE.Mesh(trunkGeo.clone(), trunkMat.clone());
+        trunk2.position.set(1.5, -5.5, 1);
+        addArcObject(trunk2);
+
+        var treeGeo = new THREE.ConeGeometry(1.2, 3.5, 8);
+        var treeMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+        var tree1 = new THREE.Mesh(treeGeo, treeMat);
+        tree1.position.set(0, -3.5, 0);
+        addArcObject(tree1);
+        var tree2 = new THREE.Mesh(treeGeo.clone(), treeMat.clone());
+        tree2.position.set(1.5, -3.5, 1);
+        tree2.scale.set(0.8, 0.9, 0.8);
+        addArcObject(tree2);
+
+        var foamCount = pc(500);
+        var foamGeo = new THREE.BufferGeometry();
+        var foamPos = new Float32Array(foamCount * 3);
+        for (var i = 0; i < foamCount; i++) {
+          foamPos[i * 3] = (Math.random() - 0.5) * 80;
+          foamPos[i * 3 + 1] = -7.5 + Math.random() * 1.0;
+          foamPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+        }
+        foamGeo.setAttribute("position", new THREE.BufferAttribute(foamPos, 3));
+        var foamMat = new THREE.PointsMaterial({
+          color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6
+        });
+        var foam = new THREE.Points(foamGeo, foamMat);
+        addArcObject(foam);
+
+        arcAnimateFn = function (t) {
+          for (var i = 0; i < posAttr.count; i++) {
+            var x = posAttr.getX(i);
+            var y = posAttr.getY(i);
+            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.2 + t * 0.7) * 0.3 + Math.cos(y * 0.25 + t * 0.5) * 0.2);
+          }
+          posAttr.needsUpdate = true;
+          ocean.geometry.computeVertexNormals();
+          tree1.rotation.z = Math.sin(t * 1.5) * 0.03;
+          tree2.rotation.z = Math.sin(t * 1.3 + 1) * 0.025;
+          var fp = foam.geometry.attributes.position;
+          for (var i = 0; i < fp.count; i++) {
+            fp.setX(i, fp.getX(i) - 0.03);
+            if (fp.getX(i) < -40) fp.setX(i, 40);
+          }
+          fp.needsUpdate = true;
+        };
+      }
+
+      function buildAlabasta() {
+        scene.background = new THREE.Color(0x1a0a00);
+        scene.fog = new THREE.FogExp2(0x1a0a00, 0.006);
+
+        addArcObject(new THREE.AmbientLight(0xc2956c, 0.8));
+        var dir = new THREE.DirectionalLight(0xff8c00, 1.5);
+        dir.position.set(0, 15, 5);
+        addArcObject(dir);
+        var hotPt = new THREE.PointLight(0xff8c00, 1.0, 30);
+        hotPt.position.set(5, 8, 0);
+        addArcObject(hotPt);
+
+        var desertGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
+        var desertMat = new THREE.MeshStandardMaterial({
+          color: 0xc2956c, roughness: 0.9, flatShading: true
+        });
+        var desert = new THREE.Mesh(desertGeo, desertMat);
+        desert.rotation.x = -Math.PI / 2;
+        desert.position.y = -8;
+        addArcObject(desert);
+        var posAttr = desert.geometry.attributes.position;
+        for (var i = 0; i < posAttr.count; i++) {
+          posAttr.setZ(i, Math.random() * 1.5);
+        }
+        posAttr.needsUpdate = true;
+        desert.geometry.computeVertexNormals();
+
+        var pyrMat = new THREE.MeshStandardMaterial({ color: 0xdaa520, roughness: 0.6, metalness: 0.15 });
+        var pyr1 = new THREE.Mesh(new THREE.ConeGeometry(5, 8, 4), pyrMat);
+        pyr1.position.set(0, -2, -5);
+        addArcObject(pyr1);
+        var pyr2 = new THREE.Mesh(new THREE.ConeGeometry(3, 5, 4), pyrMat.clone());
+        pyr2.position.set(8, -4, -8);
+        addArcObject(pyr2);
+        var pyr3 = new THREE.Mesh(new THREE.ConeGeometry(2.5, 4, 4), pyrMat.clone());
+        pyr3.position.set(-7, -5, -10);
+        addArcObject(pyr3);
+
+        var sandCount = pc(1500);
+        var sandGeo = new THREE.BufferGeometry();
+        var sandPos = new Float32Array(sandCount * 3);
+        for (var i = 0; i < sandCount; i++) {
+          sandPos[i * 3] = (Math.random() - 0.5) * 80;
+          sandPos[i * 3 + 1] = Math.random() * 20 - 5;
+          sandPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+        }
+        sandGeo.setAttribute("position", new THREE.BufferAttribute(sandPos, 3));
+        var sandMat = new THREE.PointsMaterial({
+          color: 0xd2691e, size: 0.12, transparent: true, opacity: 0.5
+        });
+        var sandStorm = new THREE.Points(sandGeo, sandMat);
+        addArcObject(sandStorm);
+
+        arcAnimateFn = function (t) {
+          var sp = sandStorm.geometry.attributes.position;
+          for (var i = 0; i < sp.count; i++) {
+            sp.setX(i, sp.getX(i) + 0.06 + Math.sin(t * 2 + i * 0.3) * 0.02);
+            sp.setY(i, sp.getY(i) + Math.sin(t + i) * 0.005);
+            if (sp.getX(i) > 40) sp.setX(i, -40);
+          }
+          sp.needsUpdate = true;
+        };
+      }
+
+      function buildSkypiea() {
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.FogExp2(0x87ceeb, 0.004);
+
+        addArcObject(new THREE.AmbientLight(0x228b22, 0.6));
+        var sun = new THREE.SpotLight(0xffcd00, 2.5, 100, Math.PI / 4);
+        sun.position.set(0, 30, 10);
+        addArcObject(sun);
+        var dir = new THREE.DirectionalLight(0xfffff0, 0.8);
+        dir.position.set(-5, 15, 5);
+        addArcObject(dir);
+
+        var cloudPositions = [];
+        for (var i = 0; i < 6; i++) {
+          var cloudGroup = new THREE.Group();
+          var cx = (Math.random() - 0.5) * 40;
+          var cy = -6 + Math.random() * 12;
+          var cz = (Math.random() - 0.5) * 30 - 5;
+          for (var j = 0; j < 3; j++) {
+            var r = 2 + Math.random() * 3;
+            var cloudGeo = new THREE.SphereGeometry(r, 12, 12);
+            var cloudMat = new THREE.MeshStandardMaterial({
+              color: 0xfffacd, roughness: 1, transparent: true, opacity: 0.75
+            });
+            var cloud = new THREE.Mesh(cloudGeo, cloudMat);
+            cloud.position.set(j * 2 - 2 + Math.random(), Math.random() * 0.5, Math.random());
+            cloud.scale.y = 0.4;
+            cloudGroup.add(cloud);
+          }
+          cloudGroup.position.set(cx, cy, cz);
+          addArcObject(cloudGroup);
+          cloudPositions.push({ obj: cloudGroup, baseY: cy });
+        }
+
+        var ruinGroup = new THREE.Group();
+        for (var i = 0; i < 7; i++) {
+          var h = 2 + Math.random() * 4;
+          var boxGeo = new THREE.BoxGeometry(1.2, h, 1.2);
+          var boxMat = new THREE.MeshStandardMaterial({
+            color: 0xdaa520, emissive: 0xffcd00, emissiveIntensity: 0.2, metalness: 0.5
+          });
+          var box = new THREE.Mesh(boxGeo, boxMat);
+          box.position.set((Math.random() - 0.5) * 10, -5 + h / 2, (Math.random() - 0.5) * 10);
+          ruinGroup.add(box);
+        }
+        addArcObject(ruinGroup);
+
+        var moteCount = pc(800);
+        var moteGeo = new THREE.BufferGeometry();
+        var motePos = new Float32Array(moteCount * 3);
+        for (var i = 0; i < moteCount; i++) {
+          motePos[i * 3] = (Math.random() - 0.5) * 50;
+          motePos[i * 3 + 1] = Math.random() * 30 - 10;
+          motePos[i * 3 + 2] = (Math.random() - 0.5) * 50;
+        }
+        moteGeo.setAttribute("position", new THREE.BufferAttribute(motePos, 3));
+        var moteMat = new THREE.PointsMaterial({
+          color: 0xf0e68c, size: 0.15, transparent: true, opacity: 0.7
+        });
+        var motes = new THREE.Points(moteGeo, moteMat);
+        addArcObject(motes);
+
+        arcAnimateFn = function (t) {
+          for (var c = 0; c < cloudPositions.length; c++) {
+            cloudPositions[c].obj.position.y = cloudPositions[c].baseY + Math.sin(t * 0.3 + cloudPositions[c].baseY) * 0.5;
+          }
+          ruinGroup.rotation.y = Math.sin(t * 0.15) * 0.08;
+          var mp = motes.geometry.attributes.position;
+          for (var i = 0; i < mp.count; i++) {
+            mp.setY(i, mp.getY(i) + 0.02);
+            mp.setX(i, mp.getX(i) + Math.sin(t * 0.4 + i * 0.1) * 0.005);
+            if (mp.getY(i) > 20) mp.setY(i, -10);
+          }
+          mp.needsUpdate = true;
+        };
+      }
+
+      function buildWater7() {
+        scene.background = new THREE.Color(0x0a0a1f);
+        scene.fog = new THREE.FogExp2(0x0a0a1f, 0.01);
+
+        addArcObject(new THREE.AmbientLight(0x708090, 1.0));
+        var dir = new THREE.DirectionalLight(0xb0c4de, 1.2);
+        dir.position.set(0, 15, 5);
+        addArcObject(dir);
+        var stormPt = new THREE.PointLight(0x4169e1, 0.6, 30);
+        stormPt.position.set(0, 10, 0);
+        addArcObject(stormPt);
+
+        var waterGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
+        var waterMat = new THREE.MeshPhongMaterial({
+          color: 0x4169e1, shininess: 100, specular: 0xb0c4de,
+          side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.85
+        });
+        var water = new THREE.Mesh(waterGeo, waterMat);
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = -8;
+        addArcObject(water);
+        var posAttr = water.geometry.attributes.position;
+        var origZ = [];
+        for (var i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
+
+        var archMat = new THREE.MeshStandardMaterial({ color: 0x708090, roughness: 0.6 });
+        for (var i = 0; i < 3; i++) {
+          var archGeo = new THREE.TorusGeometry(3 + i * 0.5, 0.35, 8, 20, Math.PI);
+          var arch = new THREE.Mesh(archGeo, archMat.clone());
+          arch.position.set(-8 + i * 8, -2, -5 - i * 3);
+          addArcObject(arch);
+        }
+
+        for (var i = 0; i < 5; i++) {
+          var h = 6 + Math.random() * 5;
+          var towerGeo = new THREE.CylinderGeometry(0.7, 1, h, 8);
+          var towerMat = new THREE.MeshStandardMaterial({ color: 0x708090, roughness: 0.7 });
+          var tower = new THREE.Mesh(towerGeo, towerMat);
+          tower.position.set(-10 + i * 5, -8 + h / 2, -8 - Math.random() * 5);
+          addArcObject(tower);
+        }
+
+        var rainCount = pc(300);
+        var rainGeo = new THREE.BufferGeometry();
+        var rainPos = new Float32Array(rainCount * 3);
+        for (var i = 0; i < rainCount; i++) {
+          rainPos[i * 3] = (Math.random() - 0.5) * 60;
+          rainPos[i * 3 + 1] = Math.random() * 40 - 5;
+          rainPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
+        var rainMat = new THREE.PointsMaterial({
+          color: 0xb0c4de, size: 0.08, transparent: true, opacity: 0.7
+        });
+        var rain = new THREE.Points(rainGeo, rainMat);
+        addArcObject(rain);
+
+        arcAnimateFn = function (t) {
+          for (var i = 0; i < posAttr.count; i++) {
+            var x = posAttr.getX(i);
+            var y = posAttr.getY(i);
+            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.4 + t * 1.2) * 1.0 + Math.cos(y * 0.35 + t) * 0.7);
+          }
+          posAttr.needsUpdate = true;
+          water.geometry.computeVertexNormals();
+          var rp = rain.geometry.attributes.position;
+          for (var i = 0; i < rp.count; i++) {
+            rp.setY(i, rp.getY(i) - 0.4);
+            if (rp.getY(i) < -8) rp.setY(i, 35);
+          }
+          rp.needsUpdate = true;
+        };
+      }
+
+      function buildMarineford() {
+        scene.background = new THREE.Color(0x0d0000);
+        scene.fog = new THREE.FogExp2(0x1c0000, 0.02);
+
+        addArcObject(new THREE.AmbientLight(0x1c1c1c, 0.4));
+        var fire = new THREE.SpotLight(0xff4500, 2.0, 50, Math.PI / 3);
+        fire.position.set(0, 15, 5);
+        addArcObject(fire);
+        for (var i = 0; i < 4; i++) {
+          var rPt = new THREE.PointLight(0xd70000, 1.5, 20);
+          rPt.position.set(
+            (Math.random() - 0.5) * 25,
+            Math.random() * 5 - 2,
+            (Math.random() - 0.5) * 25
+          );
+          addArcObject(rPt);
+        }
+
+        var groundGeo = new THREE.PlaneGeometry(200, 200, 40, 40);
+        var groundMat = new THREE.MeshStandardMaterial({
+          color: 0x1c1c1c, roughness: 1, flatShading: true
+        });
+        var ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -8;
+        addArcObject(ground);
+        var gPos = ground.geometry.attributes.position;
+        for (var i = 0; i < gPos.count; i++) {
+          gPos.setZ(i, (Math.random() - 0.5) * 3);
+        }
+        gPos.needsUpdate = true;
+        ground.geometry.computeVertexNormals();
+
+        for (var i = 0; i < 10; i++) {
+          var s = 0.5 + Math.random() * 2;
+          var debrisGeo = new THREE.BoxGeometry(s, s, s);
+          var debrisMat = new THREE.MeshStandardMaterial({
+            color: 0x2f2f2f, emissive: 0x8b0000, emissiveIntensity: 0.35
+          });
+          var debris = new THREE.Mesh(debrisGeo, debrisMat);
+          debris.position.set(
+            (Math.random() - 0.5) * 30,
+            -7 + Math.random() * 4,
+            (Math.random() - 0.5) * 30
+          );
+          debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random());
+          addArcObject(debris);
+        }
+
+        var emberCount = pc(2000);
+        var emberGeo = new THREE.BufferGeometry();
+        var emberPos = new Float32Array(emberCount * 3);
+        for (var i = 0; i < emberCount; i++) {
+          emberPos[i * 3] = (Math.random() - 0.5) * 60;
+          emberPos[i * 3 + 1] = Math.random() * 20 - 8;
+          emberPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPos, 3));
+        var emberMat = new THREE.PointsMaterial({
+          color: 0xff4500, size: 0.15, transparent: true, opacity: 0.8
+        });
+        var embers = new THREE.Points(emberGeo, emberMat);
+        addArcObject(embers);
+
+        var smokeCount = pc(500);
+        var smokeGeo = new THREE.BufferGeometry();
+        var smokePos = new Float32Array(smokeCount * 3);
+        for (var i = 0; i < smokeCount; i++) {
+          smokePos[i * 3] = (Math.random() - 0.5) * 50;
+          smokePos[i * 3 + 1] = Math.random() * 15 - 5;
+          smokePos[i * 3 + 2] = (Math.random() - 0.5) * 50;
+        }
+        smokeGeo.setAttribute("position", new THREE.BufferAttribute(smokePos, 3));
+        var smokeMat = new THREE.PointsMaterial({
+          color: 0x555555, size: 0.4, transparent: true, opacity: 0.3
+        });
+        var smoke = new THREE.Points(smokeGeo, smokeMat);
+        addArcObject(smoke);
+
+        arcAnimateFn = function (t) {
+          var ep = embers.geometry.attributes.position;
+          for (var i = 0; i < ep.count; i++) {
+            ep.setY(i, ep.getY(i) + 0.04 + Math.random() * 0.02);
+            ep.setX(i, ep.getX(i) + Math.sin(t + i * 0.5) * 0.01);
+            if (ep.getY(i) > 15) ep.setY(i, -8);
+          }
+          ep.needsUpdate = true;
+          var sp = smoke.geometry.attributes.position;
+          for (var i = 0; i < sp.count; i++) {
+            sp.setY(i, sp.getY(i) + 0.02);
+            sp.setX(i, sp.getX(i) + Math.sin(t * 0.3 + i) * 0.008);
+            sp.setZ(i, sp.getZ(i) + Math.cos(t * 0.3 + i) * 0.008);
+            if (sp.getY(i) > 15) {
+              sp.setY(i, -5);
+              sp.setX(i, (Math.random() - 0.5) * 50);
+              sp.setZ(i, (Math.random() - 0.5) * 50);
+            }
+          }
+          sp.needsUpdate = true;
+        };
+      }
+
+      function buildDressrosa() {
+        scene.background = new THREE.Color(0x1a0020);
+        scene.fog = new THREE.FogExp2(0x1a0020, 0.006);
+
+        addArcObject(new THREE.AmbientLight(0xee82ee, 0.8));
+        var dir = new THREE.DirectionalLight(0xffcd00, 1.0);
+        dir.position.set(5, 12, 5);
+        addArcObject(dir);
+        var pinkPt = new THREE.PointLight(0xff69b4, 1.5, 35);
+        pinkPt.position.set(0, 5, 0);
+        addArcObject(pinkPt);
+        var purplePt = new THREE.PointLight(0x9370db, 0.8, 25);
+        purplePt.position.set(-5, 3, 5);
+        addArcObject(purplePt);
+
+        var coloGeo = new THREE.TorusGeometry(6, 1, 12, 40);
+        var coloMat = new THREE.MeshStandardMaterial({
+          color: 0xee82ee, roughness: 0.5, metalness: 0.3,
+          emissive: 0xee82ee, emissiveIntensity: 0.1
+        });
+        var colosseum = new THREE.Mesh(coloGeo, coloMat);
+        colosseum.position.set(0, -4, -5);
+        colosseum.rotation.x = Math.PI / 2;
+        addArcObject(colosseum);
+
+        var cageGeo = new THREE.IcosahedronGeometry(14, 1);
+        var cageMat = new THREE.MeshStandardMaterial({
+          color: 0x9370db, wireframe: true, transparent: true, opacity: 0.2,
+          emissive: 0x9370db, emissiveIntensity: 0.15
+        });
+        var cage = new THREE.Mesh(cageGeo, cageMat);
+        cage.position.set(0, 2, -5);
+        addArcObject(cage);
+
+        var petalCount = pc(2500);
+        var petalGeo = new THREE.BufferGeometry();
+        var petalPos = new Float32Array(petalCount * 3);
+        for (var i = 0; i < petalCount; i++) {
+          petalPos[i * 3] = (Math.random() - 0.5) * 70;
+          petalPos[i * 3 + 1] = Math.random() * 35 - 10;
+          petalPos[i * 3 + 2] = (Math.random() - 0.5) * 70;
+        }
+        petalGeo.setAttribute("position", new THREE.BufferAttribute(petalPos, 3));
+        var petalMat = new THREE.PointsMaterial({
+          color: 0xff69b4, size: 0.18, transparent: true, opacity: 0.7
+        });
+        var petals = new THREE.Points(petalGeo, petalMat);
+        addArcObject(petals);
+
+        arcAnimateFn = function (t) {
+          cage.rotation.y += 0.002;
+          cage.rotation.x += 0.001;
+          colosseum.rotation.z = Math.sin(t * 0.2) * 0.05;
+          var pp = petals.geometry.attributes.position;
+          for (var i = 0; i < pp.count; i++) {
+            pp.setY(i, pp.getY(i) - 0.025);
+            pp.setX(i, pp.getX(i) + Math.sin(t * 0.7 + i * 0.08) * 0.015);
+            pp.setZ(i, pp.getZ(i) + Math.cos(t * 0.5 + i * 0.06) * 0.01);
+            if (pp.getY(i) < -10) pp.setY(i, 25);
+          }
+          pp.needsUpdate = true;
+          petals.rotation.y += 0.0003;
+        };
+      }
+
+      function buildWano() {
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x0a0000, 0.015);
+
+        addArcObject(new THREE.AmbientLight(0x2f4f4f, 0.5));
+        var bloodDir = new THREE.DirectionalLight(0xdc143c, 1.2);
+        bloodDir.position.set(5, 10, 5);
+        addArcObject(bloodDir);
+        var moonPt = new THREE.PointLight(0xffffff, 1.0, 40);
+        moonPt.position.set(-10, 15, 5);
+        addArcObject(moonPt);
+        var firePt = new THREE.PointLight(0xdc143c, 0.6, 20);
+        firePt.position.set(3, 0, 5);
+        addArcObject(firePt);
+
+        var pagodaGroup = new THREE.Group();
+        for (var i = 0; i < 5; i++) {
+          var tierW = 3.5 - i * 0.55;
+          var tierGeo = new THREE.BoxGeometry(tierW, 1.3, tierW);
+          var tierMat = new THREE.MeshStandardMaterial({
+            color: i % 2 === 0 ? 0xdc143c : 0xf5f5dc, roughness: 0.6,
+            emissive: i % 2 === 0 ? 0xdc143c : 0x000000,
+            emissiveIntensity: i % 2 === 0 ? 0.15 : 0
+          });
+          var tier = new THREE.Mesh(tierGeo, tierMat);
+          tier.position.y = i * 1.6;
+          pagodaGroup.add(tier);
+        }
+        var roofGeo = new THREE.ConeGeometry(1.5, 2, 4);
+        var roofMat = new THREE.MeshStandardMaterial({ color: 0xdc143c });
+        var roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = 5 * 1.6 + 0.5;
+        pagodaGroup.add(roof);
+        pagodaGroup.position.set(0, -5, -5);
+        addArcObject(pagodaGroup);
+
+        var toriiGroup = new THREE.Group();
+        var toriiMat = new THREE.MeshStandardMaterial({
+          color: 0xf5f5dc, roughness: 0.5,
+          emissive: 0xdc143c, emissiveIntensity: 0.05
+        });
+        var pillarGeo = new THREE.CylinderGeometry(0.2, 0.2, 7, 8);
+        var lP = new THREE.Mesh(pillarGeo, toriiMat);
+        lP.position.set(-3, -2.5, 3);
+        toriiGroup.add(lP);
+        var rP = new THREE.Mesh(pillarGeo.clone(), toriiMat.clone());
+        rP.position.set(3, -2.5, 3);
+        toriiGroup.add(rP);
+        var archGeo = new THREE.TorusGeometry(3.2, 0.2, 8, 20, Math.PI);
+        var archTop = new THREE.Mesh(archGeo, toriiMat.clone());
+        archTop.position.set(0, 1, 3);
+        toriiGroup.add(archTop);
+        var beamGeo = new THREE.BoxGeometry(8, 0.25, 0.25);
+        var beam = new THREE.Mesh(beamGeo, toriiMat.clone());
+        beam.position.set(0, -0.3, 3);
+        toriiGroup.add(beam);
+        addArcObject(toriiGroup);
+
+        for (var i = 0; i < 4; i++) {
+          var h = 8 + Math.random() * 8;
+          var w = 5 + Math.random() * 4;
+          var mtGeo = new THREE.BoxGeometry(w, h, w * 0.7);
+          var mtMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a2e, roughness: 0.95, flatShading: true
+          });
+          var mt = new THREE.Mesh(mtGeo, mtMat);
+          mt.position.set(-18 + i * 12, -8 + h / 2 - 2, -20 - Math.random() * 10);
+          addArcObject(mt);
+        }
+
+        var blossomCount = pc(3000);
+        var blossomGeo = new THREE.BufferGeometry();
+        var blossomPos = new Float32Array(blossomCount * 3);
+        for (var i = 0; i < blossomCount; i++) {
+          blossomPos[i * 3] = (Math.random() - 0.5) * 60;
+          blossomPos[i * 3 + 1] = Math.random() * 30 - 5;
+          blossomPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        blossomGeo.setAttribute("position", new THREE.BufferAttribute(blossomPos, 3));
+        var blossomMat = new THREE.PointsMaterial({
+          color: 0xffb7c5, size: 0.15, transparent: true, opacity: 0.8
+        });
+        var blossoms = new THREE.Points(blossomGeo, blossomMat);
+        addArcObject(blossoms);
+
+        arcAnimateFn = function (t) {
+          pagodaGroup.rotation.y = Math.sin(t * 0.15) * 0.04;
+          var bp = blossoms.geometry.attributes.position;
+          for (var i = 0; i < bp.count; i++) {
+            bp.setX(i, bp.getX(i) + 0.04 + Math.sin(t * 0.5 + i * 0.04) * 0.012);
+            bp.setY(i, bp.getY(i) - 0.01);
+            if (bp.getX(i) > 30) bp.setX(i, -30);
+            if (bp.getY(i) < -5) bp.setY(i, 25);
+          }
+          bp.needsUpdate = true;
+        };
+      }
+
+      function buildCreditsScene() {
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.003);
+
+        addArcObject(new THREE.AmbientLight(0x222244, 0.5));
+
+        var creditStarCount = pc(500);
+        var csGeo = new THREE.BufferGeometry();
+        var csPos = new Float32Array(creditStarCount * 3);
+        for (var i = 0; i < creditStarCount; i++) {
+          csPos[i * 3] = (Math.random() - 0.5) * 100;
+          csPos[i * 3 + 1] = (Math.random() - 0.5) * 60;
+          csPos[i * 3 + 2] = (Math.random() - 0.5) * 100;
+        }
+        csGeo.setAttribute("position", new THREE.BufferAttribute(csPos, 3));
+        var csMat = new THREE.PointsMaterial({
+          color: 0xffffff, size: 0.3, transparent: true, opacity: 0.9
+        });
+        var creditStars = new THREE.Points(csGeo, csMat);
+        addArcObject(creditStars);
+
+        arcAnimateFn = function (t) {
+          var cp = creditStars.geometry.attributes.position;
+          for (var i = 0; i < cp.count; i++) {
+            cp.setX(i, cp.getX(i) + Math.sin(t * 0.1 + i * 0.2) * 0.003);
+            cp.setY(i, cp.getY(i) + Math.cos(t * 0.08 + i * 0.15) * 0.002);
+          }
+          cp.needsUpdate = true;
+        };
+      }
+
+      function loadArcScene(index) {
+        clearScene();
+        switch (index) {
+          case 0: buildGrandLine(); break;
+          case 1: buildEastBlue(); break;
+          case 2: buildAlabasta(); break;
+          case 3: buildSkypiea(); break;
+          case 4: buildWater7(); break;
+          case 5: buildMarineford(); break;
+          case 6: buildDressrosa(); break;
+          case 7: buildWano(); break;
+          default: buildGrandLine(); break;
+        }
+      }
+
+      function updateUI(index) {
+        var arc = ARCS[index];
+
+        if (bloomPass) {
+          gsap.to(bloomPass, {
+            strength: arc.bloom[0], radius: arc.bloom[1], threshold: arc.bloom[2],
+            duration: 1.0, ease: "power2.out"
+          });
+        }
+
+        var dots = dotsEl.querySelectorAll("[data-dot]");
+        for (var i = 0; i < dots.length; i++) {
+          var isActive = i === index;
+          dots[i].style.backgroundColor = isActive ? arc.color : "transparent";
+          dots[i].style.borderColor = arc.color;
+          dots[i].style.boxShadow = isActive
+            ? "0 0 8px " + hexToRgba(arc.color, 0.7) + ", 0 0 16px " + hexToRgba(arc.color, 0.35)
+            : "none";
+          dots[i].style.width = isActive ? "12px" : "10px";
+          dots[i].style.height = isActive ? "12px" : "10px";
+        }
+
+        gsap.to(titleContainerEl, {
+          y: -30, opacity: 0, duration: 0.5, ease: "power2.in",
+          onComplete: function () {
+            titleEl.textContent = arc.title;
+            titleEl.style.color = arc.color;
+            titleEl.style.textShadow = "0 0 20px " + hexToRgba(arc.color, 0.6) + ", 0 0 40px " + hexToRgba(arc.color, 0.3) + ", 0 0 80px " + hexToRgba(arc.color, 0.15);
+            taglineEl.textContent = arc.tagline;
+            promptEl.textContent = arc.prompt;
+
+            gsap.fromTo(titleContainerEl,
+              { y: 40, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.9, ease: "power2.out" }
+            );
+          }
+        });
+      }
+
+      function showCreditsUI() {
+        if (bloomPass) {
+          gsap.to(bloomPass, {
+            strength: 0.8, radius: 0.5, threshold: 0.3,
+            duration: 1.0, ease: "power2.out"
+          });
+        }
+
+        gsap.to(titleContainerEl, {
+          y: -30, opacity: 0, duration: 0.5, ease: "power2.in",
+          onComplete: function () { titleContainerEl.style.display = "none"; }
+        });
+
+        gsap.to(dotsEl, { opacity: 0, duration: 0.5 });
+        gsap.to(promptContainerEl, { opacity: 0, duration: 0.5 });
+
+        creditsEl.style.display = "flex";
+        var lines = creditsEl.querySelectorAll("[data-credit-line]");
+        for (var i = 0; i < lines.length; i++) {
+          gsap.set(lines[i], { opacity: 0, y: 20 });
+        }
+        for (var i = 0; i < lines.length; i++) {
+          gsap.to(lines[i], {
+            opacity: 1, y: 0, duration: 0.8,
+            delay: i * 0.6, ease: "power2.out"
+          });
+        }
+      }
+
+      function hideCreditsUI() {
+        gsap.to(creditsEl, {
+          opacity: 0, duration: 0.5,
+          onComplete: function () {
+            creditsEl.style.display = "none";
+            gsap.set(creditsEl, { opacity: 1 });
+          }
+        });
+
+        titleContainerEl.style.display = "block";
+        gsap.set(titleContainerEl, { y: 0, opacity: 1 });
+        gsap.to(dotsEl, { opacity: 1, duration: 0.5 });
+        gsap.to(promptContainerEl, { opacity: 1, duration: 0.5 });
+      }
+
+      function navigateForward() {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        if (showingCredits) {
+          if (prefersReducedMotion) {
+            clearScene(); loadArcScene(0); camera.position.z = 20;
+            currentArcIndex = 0; showingCredits = false;
+            hideCreditsUI(); updateUI(0); isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
+              onComplete: function () {
+                clearScene(); loadArcScene(0); camera.position.z = 20;
+                currentArcIndex = 0; showingCredits = false;
+                hideCreditsUI(); updateUI(0); isTransitioning = false;
+              }
+            });
+          }
+          return;
+        }
+
+        if (currentArcIndex === 7) {
+          if (prefersReducedMotion) {
+            clearScene(); buildCreditsScene();
+            showingCredits = true; showCreditsUI(); isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
+              onComplete: function () {
+                clearScene(); buildCreditsScene(); camera.position.z = 20;
+                showingCredits = true; showCreditsUI(); isTransitioning = false;
+              }
+            });
+          }
+          return;
+        }
+
+        var nextIndex = currentArcIndex + 1;
+        if (prefersReducedMotion) {
+          loadArcScene(nextIndex); camera.position.z = 20;
+          currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
+        } else {
+          gsap.to(camera.position, {
+            z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
+            onComplete: function () {
+              loadArcScene(nextIndex); camera.position.z = 20;
+              currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
+            }
+          });
+        }
+      }
+
+      function navigateBack() {
+        if (isTransitioning) return;
+        if (showingCredits) {
+          isTransitioning = true;
+          if (prefersReducedMotion) {
+            clearScene(); loadArcScene(7); camera.position.z = 20;
+            showingCredits = false; hideCreditsUI(); updateUI(7);
+            currentArcIndex = 7; isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
+              onComplete: function () {
+                clearScene(); loadArcScene(7); camera.position.z = 20;
+                showingCredits = false; hideCreditsUI(); updateUI(7);
+                currentArcIndex = 7; isTransitioning = false;
+              }
+            });
+          }
+          return;
+        }
+        if (currentArcIndex <= 0) return;
+        isTransitioning = true;
+        var prevIndex = currentArcIndex - 1;
+        if (prefersReducedMotion) {
+          loadArcScene(prevIndex); camera.position.z = 20;
+          currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
+        } else {
+          gsap.to(camera.position, {
+            z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
+            onComplete: function () {
+              loadArcScene(prevIndex); camera.position.z = 20;
+              currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
+            }
+          });
+        }
+      }
+
+      function onInteract(e) {
+        var target = e.target;
+        if (target.closest && target.closest("[data-credits-link]")) return;
+        navigateForward();
+      }
+
+      function onKeyDown(e) {
+        if (e.key === " " || e.key === "ArrowRight") {
+          e.preventDefault();
+          navigateForward();
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          navigateBack();
+        }
+      }
+
+      if (isMobile) {
+        window.addEventListener("touchstart", onInteract, { passive: true });
+      } else {
+        window.addEventListener("click", onInteract);
+      }
+      window.addEventListener("keydown", onKeyDown);
+
+      var targetX = 0;
+      var targetY = 0;
+      var baseCamX = 0;
+      var baseCamY = 4;
+      var baseCamZ = 20;
+      var parallaxStrength = 3;
+
+      window.addEventListener("mousemove", function (e) {
+        targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+        targetY = -(e.clientY / window.innerHeight - 0.5) * 2;
+      });
+
+      window.addEventListener("resize", function () {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        if (composer) composer.setSize(w, h);
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        var t = clock.getElapsedTime();
+
+        stars.rotation.y += 0.0001;
+        stars.rotation.x += 0.00005;
+
+        if (arcAnimateFn) arcAnimateFn(t);
+
+        if (!isTransitioning) {
+          camera.position.x += (baseCamX + targetX * parallaxStrength - camera.position.x) * 0.05;
+          camera.position.y += (baseCamY + targetY * parallaxStrength - camera.position.y) * 0.05;
+        }
+        camera.lookAt(0, 0, 0);
+
+        if (composer) {
+          composer.render();
+        } else {
+          renderer.render(scene, camera);
+        }
+      }
+
+      loadArcScene(0);
+      animate();
+
+      window.__threejsState = {
+        scene: scene, camera: camera, renderer: renderer, composer: composer,
+        clock: clock, THREE: THREE, gsap: gsap, stars: stars, bloomPass: bloomPass,
+        getCurrentArc: function () { return currentArcIndex; },
+        isCredits: function () { return showingCredits; },
+        loadArcScene: loadArcScene, updateUI: updateUI, clearScene: clearScene,
+        navigateForward: navigateForward, navigateBack: navigateBack
+      };
+    })();
+  </script>
+</body>
+</html>

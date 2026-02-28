@@ -4,9 +4,11 @@
 
 This is an immersive, cinematic portfolio website themed around the One Piece anime. The main experience is a click-to-zoom 3D WebGL animation that takes users through different One Piece arcs (East Blue, Alabasta, Skypiea, Water 7, etc.), each rendered as a unique 3D scene. The goal is to impress recruiters and showcase advanced frontend skills — specifically Three.js, GSAP animations, and WebGL post-processing effects.
 
-The project wraps a primarily frontend 3D experience inside a React + Express fullstack shell. The actual One Piece experience lives in `client/src/pages/OnePiece.tsx`, which dynamically loads Three.js, GSAP, and post-processing libraries from CDN at runtime, then renders a full-screen WebGL canvas.
+The project exists in two forms:
 
-The backend is minimal — it exists mainly as a scaffold with no active API routes yet.
+1. **Standalone `index.html`** (project root) — A single self-contained HTML file with zero local dependencies. All Three.js, GSAP, post-processing, and fonts load from CDN. Can be opened directly in any browser or hosted on any static file server. This is the primary deliverable.
+
+2. **React + Express shell** — The original development version wrapping the same experience inside `client/src/pages/OnePiece.tsx`. The backend is minimal with no active API routes.
 
 ## User Preferences
 

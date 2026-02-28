@@ -88,6 +88,8 @@ export default function OnePiece() {
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const promptRef = useRef<HTMLSpanElement>(null);
   const dotsRef = useRef<HTMLDivElement>(null);
+  const creditsRef = useRef<HTMLDivElement>(null);
+  const titleContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -142,6 +144,12 @@ export default function OnePiece() {
 
       initializedRef.current = true;
 
+      const isMobile = window.innerWidth < 768;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const pc = (count: number) => isMobile ? Math.ceil(count * 0.25) : count;
+      const oceanSeg = isMobile ? 40 : 60;
+      const oceanSegHigh = isMobile ? 40 : 80;
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x050a1a);
       scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
@@ -180,6 +188,7 @@ export default function OnePiece() {
 
       let currentArcIndex = 0;
       let isTransitioning = false;
+      let showingCredits = false;
       let arcObjects: any[] = [];
       let arcAnimateFn: ((t: number) => void) | null = null;
 
@@ -232,7 +241,7 @@ export default function OnePiece() {
         scene.background = new THREE.Color(0x050a1a);
         scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
 
-        const oceanGeo = new THREE.PlaneGeometry(200, 200, 80, 80);
+        const oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSegHigh, oceanSegHigh);
         const oceanMat = new THREE.MeshPhongMaterial({
           color: 0x1a4a8a, shininess: 60, specular: 0x4488cc,
           side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.9,
@@ -293,7 +302,7 @@ export default function OnePiece() {
         warmPt.position.set(0, 5, 5);
         addArcObject(warmPt);
 
-        const oceanGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
+        const oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
         const oceanMat = new THREE.MeshPhongMaterial({
           color: 0x20b2aa, shininess: 80, specular: 0x87ceeb,
           side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.85,
@@ -331,7 +340,7 @@ export default function OnePiece() {
         tree2.scale.set(0.8, 0.9, 0.8);
         addArcObject(tree2);
 
-        const foamCount = 500;
+        const foamCount = pc(500);
         const foamGeo = new THREE.BufferGeometry();
         const foamPos = new Float32Array(foamCount * 3);
         for (let i = 0; i < foamCount; i++) {
@@ -381,7 +390,7 @@ export default function OnePiece() {
         hotPt.position.set(5, 8, 0);
         addArcObject(hotPt);
 
-        const desertGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
+        const desertGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
         const desertMat = new THREE.MeshStandardMaterial({
           color: 0xc2956c, roughness: 0.9, flatShading: true,
         });
@@ -407,7 +416,7 @@ export default function OnePiece() {
         pyr3.position.set(-7, -5, -10);
         addArcObject(pyr3);
 
-        const sandCount = 1500;
+        const sandCount = pc(1500);
         const sandGeo = new THREE.BufferGeometry();
         const sandPos = new Float32Array(sandCount * 3);
         for (let i = 0; i < sandCount; i++) {
@@ -484,7 +493,7 @@ export default function OnePiece() {
         }
         addArcObject(ruinGroup);
 
-        const moteCount = 800;
+        const moteCount = pc(800);
         const moteGeo = new THREE.BufferGeometry();
         const motePos = new Float32Array(moteCount * 3);
         for (let i = 0; i < moteCount; i++) {
@@ -530,7 +539,7 @@ export default function OnePiece() {
         stormPt.position.set(0, 10, 0);
         addArcObject(stormPt);
 
-        const waterGeo = new THREE.PlaneGeometry(200, 200, 60, 60);
+        const waterGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
         const waterMat = new THREE.MeshPhongMaterial({
           color: 0x4169e1, shininess: 100, specular: 0xb0c4de,
           side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.85,
@@ -560,7 +569,7 @@ export default function OnePiece() {
           addArcObject(tower);
         }
 
-        const rainCount = 300;
+        const rainCount = pc(300);
         const rainGeo = new THREE.BufferGeometry();
         const rainPos = new Float32Array(rainCount * 3);
         for (let i = 0; i < rainCount; i++) {
@@ -645,7 +654,7 @@ export default function OnePiece() {
           addArcObject(debris);
         }
 
-        const emberCount = 2000;
+        const emberCount = pc(2000);
         const emberGeo = new THREE.BufferGeometry();
         const emberPos = new Float32Array(emberCount * 3);
         for (let i = 0; i < emberCount; i++) {
@@ -660,7 +669,7 @@ export default function OnePiece() {
         const embers = new THREE.Points(emberGeo, emberMat);
         addArcObject(embers);
 
-        const smokeCount = 500;
+        const smokeCount = pc(500);
         const smokeGeo = new THREE.BufferGeometry();
         const smokePos = new Float32Array(smokeCount * 3);
         for (let i = 0; i < smokeCount; i++) {
@@ -736,7 +745,7 @@ export default function OnePiece() {
         cage.position.set(0, 2, -5);
         addArcObject(cage);
 
-        const petalCount = 2500;
+        const petalCount = pc(2500);
         const petalGeo = new THREE.BufferGeometry();
         const petalPos = new Float32Array(petalCount * 3);
         for (let i = 0; i < petalCount; i++) {
@@ -841,7 +850,7 @@ export default function OnePiece() {
           addArcObject(mt);
         }
 
-        const blossomCount = 3000;
+        const blossomCount = pc(3000);
         const blossomGeo = new THREE.BufferGeometry();
         const blossomPos = new Float32Array(blossomCount * 3);
         for (let i = 0; i < blossomCount; i++) {
@@ -866,6 +875,41 @@ export default function OnePiece() {
             if (bp.getY(i) < -5) bp.setY(i, 25);
           }
           bp.needsUpdate = true;
+        };
+      };
+
+      // ══════════════════════════════════════════════════════════════════════
+      // ── CREDITS SCENE ─────────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
+      const buildCreditsScene = () => {
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.003);
+
+        addArcObject(new THREE.AmbientLight(0x222244, 0.5));
+
+        const creditStarCount = pc(500);
+        const csGeo = new THREE.BufferGeometry();
+        const csPos = new Float32Array(creditStarCount * 3);
+        for (let i = 0; i < creditStarCount; i++) {
+          csPos[i * 3] = (Math.random() - 0.5) * 100;
+          csPos[i * 3 + 1] = (Math.random() - 0.5) * 60;
+          csPos[i * 3 + 2] = (Math.random() - 0.5) * 100;
+        }
+        csGeo.setAttribute("position", new THREE.BufferAttribute(csPos, 3));
+        const csMat = new THREE.PointsMaterial({
+          color: 0xffffff, size: 0.3, transparent: true, opacity: 0.9,
+        });
+        const creditStars = new THREE.Points(csGeo, csMat);
+        addArcObject(creditStars);
+
+        arcAnimateFn = (t: number) => {
+          const cp = creditStars.geometry.attributes.position;
+          for (let i = 0; i < cp.count; i++) {
+            cp.setX(i, cp.getX(i) + Math.sin(t * 0.1 + i * 0.2) * 0.003);
+            cp.setY(i, cp.getY(i) + Math.cos(t * 0.08 + i * 0.15) * 0.002);
+          }
+          cp.needsUpdate = true;
         };
       };
 
@@ -924,7 +968,7 @@ export default function OnePiece() {
           });
         }
 
-        const titleContainer = titleEl?.parentElement;
+        const titleContainer = titleContainerRef.current;
 
         gsap.to(titleContainer, {
           y: -30,
@@ -950,29 +994,253 @@ export default function OnePiece() {
       };
 
       // ══════════════════════════════════════════════════════════════════════
-      // ── CLICK HANDLER — INFINITE LOOP NAV ─────────────────────────────────
+      // ── CREDITS UI ────────────────────────────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
-      const onWindowClick = () => {
-        if (isTransitioning) return;
+      const showCreditsUI = () => {
+        const titleContainer = titleContainerRef.current;
+        const dotsEl = dotsRef.current;
+        const creditsEl = creditsRef.current;
+        const promptEl = promptRef.current;
 
-        isTransitioning = true;
-        const nextIndex = (currentArcIndex + 1) % ARCS.length;
+        if (bloomPass) {
+          gsap.to(bloomPass, {
+            strength: 0.8, radius: 0.5, threshold: 0.3,
+            duration: 1.0, ease: "power2.out",
+          });
+        }
 
-        gsap.to(camera.position, {
-          z: camera.position.z - 30,
-          duration: 1.4,
-          ease: "power3.inOut",
+        gsap.to(titleContainer, {
+          y: -30, opacity: 0, duration: 0.5, ease: "power2.in",
           onComplete: () => {
-            loadArcScene(nextIndex);
-            camera.position.z = 20;
-            currentArcIndex = nextIndex;
-            updateUI(nextIndex);
-            isTransitioning = false;
-          },
+            if (titleContainer) titleContainer.style.display = "none";
+          }
         });
+
+        if (dotsEl) {
+          gsap.to(dotsEl, { opacity: 0, duration: 0.5 });
+        }
+
+        if (promptEl?.parentElement) {
+          gsap.to(promptEl.parentElement, { opacity: 0, duration: 0.5 });
+        }
+
+        if (creditsEl) {
+          creditsEl.style.display = "flex";
+          const lines = creditsEl.querySelectorAll("[data-credit-line]");
+          lines.forEach((line: any) => {
+            gsap.set(line, { opacity: 0, y: 20 });
+          });
+          lines.forEach((line: any, i: number) => {
+            gsap.to(line, {
+              opacity: 1, y: 0,
+              duration: 0.8,
+              delay: i * 0.6,
+              ease: "power2.out",
+            });
+          });
+        }
       };
-      window.addEventListener("click", onWindowClick);
+
+      const hideCreditsUI = () => {
+        const titleContainer = titleContainerRef.current;
+        const dotsEl = dotsRef.current;
+        const creditsEl = creditsRef.current;
+        const promptEl = promptRef.current;
+
+        if (creditsEl) {
+          gsap.to(creditsEl, {
+            opacity: 0, duration: 0.5,
+            onComplete: () => {
+              creditsEl.style.display = "none";
+              gsap.set(creditsEl, { opacity: 1 });
+            }
+          });
+        }
+
+        if (titleContainer) {
+          titleContainer.style.display = "block";
+          gsap.set(titleContainer, { y: 0, opacity: 1 });
+        }
+
+        if (dotsEl) {
+          gsap.to(dotsEl, { opacity: 1, duration: 0.5 });
+        }
+
+        if (promptEl?.parentElement) {
+          gsap.to(promptEl.parentElement, { opacity: 1, duration: 0.5 });
+        }
+      };
+
+      // ══════════════════════════════════════════════════════════════════════
+      // ── NAVIGATION LOGIC ──────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
+      const navigateForward = () => {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        if (showingCredits) {
+          if (prefersReducedMotion) {
+            clearScene();
+            loadArcScene(0);
+            camera.position.z = 20;
+            currentArcIndex = 0;
+            showingCredits = false;
+            hideCreditsUI();
+            updateUI(0);
+            isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z + 30,
+              duration: 1.4,
+              ease: "power3.inOut",
+              onComplete: () => {
+                clearScene();
+                loadArcScene(0);
+                camera.position.z = 20;
+                currentArcIndex = 0;
+                showingCredits = false;
+                hideCreditsUI();
+                updateUI(0);
+                isTransitioning = false;
+              },
+            });
+          }
+          return;
+        }
+
+        if (currentArcIndex === 7) {
+          if (prefersReducedMotion) {
+            clearScene();
+            buildCreditsScene();
+            showingCredits = true;
+            showCreditsUI();
+            isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z - 30,
+              duration: 1.4,
+              ease: "power3.inOut",
+              onComplete: () => {
+                clearScene();
+                buildCreditsScene();
+                camera.position.z = 20;
+                showingCredits = true;
+                showCreditsUI();
+                isTransitioning = false;
+              },
+            });
+          }
+          return;
+        }
+
+        const nextIndex = currentArcIndex + 1;
+        if (prefersReducedMotion) {
+          loadArcScene(nextIndex);
+          camera.position.z = 20;
+          currentArcIndex = nextIndex;
+          updateUI(nextIndex);
+          isTransitioning = false;
+        } else {
+          gsap.to(camera.position, {
+            z: camera.position.z - 30,
+            duration: 1.4,
+            ease: "power3.inOut",
+            onComplete: () => {
+              loadArcScene(nextIndex);
+              camera.position.z = 20;
+              currentArcIndex = nextIndex;
+              updateUI(nextIndex);
+              isTransitioning = false;
+            },
+          });
+        }
+      };
+
+      const navigateBack = () => {
+        if (isTransitioning) return;
+        if (showingCredits) {
+          isTransitioning = true;
+          if (prefersReducedMotion) {
+            clearScene();
+            loadArcScene(7);
+            camera.position.z = 20;
+            showingCredits = false;
+            hideCreditsUI();
+            updateUI(7);
+            currentArcIndex = 7;
+            isTransitioning = false;
+          } else {
+            gsap.to(camera.position, {
+              z: camera.position.z + 30,
+              duration: 1.4,
+              ease: "power3.inOut",
+              onComplete: () => {
+                clearScene();
+                loadArcScene(7);
+                camera.position.z = 20;
+                showingCredits = false;
+                hideCreditsUI();
+                updateUI(7);
+                currentArcIndex = 7;
+                isTransitioning = false;
+              },
+            });
+          }
+          return;
+        }
+        if (currentArcIndex <= 0) return;
+        isTransitioning = true;
+        const prevIndex = currentArcIndex - 1;
+        if (prefersReducedMotion) {
+          loadArcScene(prevIndex);
+          camera.position.z = 20;
+          currentArcIndex = prevIndex;
+          updateUI(prevIndex);
+          isTransitioning = false;
+        } else {
+          gsap.to(camera.position, {
+            z: camera.position.z + 30,
+            duration: 1.4,
+            ease: "power3.inOut",
+            onComplete: () => {
+              loadArcScene(prevIndex);
+              camera.position.z = 20;
+              currentArcIndex = prevIndex;
+              updateUI(prevIndex);
+              isTransitioning = false;
+            },
+          });
+        }
+      };
+
+      // ══════════════════════════════════════════════════════════════════════
+      // ── INPUT HANDLERS ────────────────────────────────────────────────────
+      // ══════════════════════════════════════════════════════════════════════
+
+      const onInteract = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("[data-credits-link]")) return;
+        navigateForward();
+      };
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === " " || e.key === "ArrowRight") {
+          e.preventDefault();
+          navigateForward();
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          navigateBack();
+        }
+      };
+
+      if (isMobile) {
+        window.addEventListener("touchstart", onInteract, { passive: true });
+      } else {
+        window.addEventListener("click", onInteract);
+      }
+      window.addEventListener("keydown", onKeyDown);
 
       // ══════════════════════════════════════════════════════════════════════
       // ── MOUSE PARALLAX ────────────────────────────────────────────────────
@@ -1035,7 +1303,12 @@ export default function OnePiece() {
         cancelAnimationFrame(animFrameId);
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("resize", onResize);
-        window.removeEventListener("click", onWindowClick);
+        window.removeEventListener("keydown", onKeyDown);
+        if (isMobile) {
+          window.removeEventListener("touchstart", onInteract);
+        } else {
+          window.removeEventListener("click", onInteract);
+        }
         clearScene();
         scene.traverse((obj: any) => {
           if (obj.geometry) obj.geometry.dispose();
@@ -1058,7 +1331,9 @@ export default function OnePiece() {
         scene, camera, renderer, composer, clock, THREE, gsap,
         stars, bloomPass,
         getCurrentArc: () => currentArcIndex,
+        isCredits: () => showingCredits,
         loadArcScene, updateUI, clearScene,
+        navigateForward, navigateBack,
       };
 
       console.log("[OnePiece] Arc navigation system ready.");
@@ -1103,6 +1378,7 @@ export default function OnePiece() {
       />
 
       <div
+        ref={titleContainerRef}
         data-testid="arc-title-container"
         style={{
           position: "fixed",
@@ -1144,6 +1420,76 @@ export default function OnePiece() {
         >
           {ARCS[0].tagline}
         </p>
+      </div>
+
+      <div
+        ref={creditsRef}
+        data-testid="credits-container"
+        style={{
+          position: "fixed",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 10,
+          textAlign: "center",
+          display: "none",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "1.2rem",
+          userSelect: "none",
+        }}
+      >
+        <div data-credit-line data-testid="credits-title" style={{
+          fontFamily: "'Pirata One', cursive",
+          fontSize: "2rem",
+          color: "#FFCD00",
+          textShadow: "0 0 20px rgba(255,205,0,0.5), 0 0 40px rgba(255,205,0,0.25)",
+        }}>
+          The Adventure Continues...
+        </div>
+        <div data-credit-line data-testid="credits-author" style={{
+          fontFamily: "'Cinzel', serif",
+          fontSize: "1.2rem",
+          color: "#62C3F8",
+          textShadow: "0 0 12px rgba(98,195,248,0.3)",
+        }}>
+          Built by [Your Name]
+        </div>
+        <div data-credit-line data-testid="credits-tech" style={{
+          fontFamily: "'Cinzel', serif",
+          fontSize: "0.9rem",
+          color: "#888",
+          letterSpacing: "0.1em",
+        }}>
+          Three.js · GSAP · WebGL · Replit
+        </div>
+        <a
+          data-credit-line
+          data-credits-link
+          data-testid="credits-portfolio-link"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontFamily: "'Pirata One', cursive",
+            fontSize: "1rem",
+            color: "#D70000",
+            textDecoration: "none",
+            pointerEvents: "auto",
+            textShadow: "0 0 10px rgba(215,0,0,0.3)",
+            transition: "text-shadow 0.3s ease, color 0.3s ease",
+            marginTop: "0.5rem",
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLElement).style.textShadow = "0 0 15px rgba(215,0,0,0.7), 0 0 30px rgba(215,0,0,0.4), 0 0 50px rgba(215,0,0,0.2)";
+            (e.target as HTMLElement).style.color = "#FF2020";
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLElement).style.textShadow = "0 0 10px rgba(215,0,0,0.3)";
+            (e.target as HTMLElement).style.color = "#D70000";
+          }}
+        >
+          View My Portfolio →
+        </a>
       </div>
 
       <div
@@ -1212,6 +1558,13 @@ export default function OnePiece() {
         @keyframes pulse-prompt {
           0%, 100% { opacity: 1.0; }
           50% { opacity: 0.4; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
         }
       `}</style>
     </>

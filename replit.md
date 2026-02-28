@@ -29,9 +29,14 @@ Preferred communication style: Simple, everyday language.
 - **Animation**: GSAP loaded from CDN for camera animations and cinematic transitions
 - **Pattern**: All 3D libraries are loaded as global `window.*` variables (not npm imports), because the PRD specifies zero-build-tool compatibility and CDN delivery
 - **Canvas**: Three.js renders to a full-screen WebGL canvas. React acts as a thin mount point via `useRef` and `useEffect`
-- **Arc System**: 8 unique 3D scenes (Grand Line, East Blue, Alabasta, Skypiea, Water 7, Marineford, Dressrosa, Wano). Each builder sets scene.background, scene.fog, custom geometry, particles, and lighting. Click navigation uses GSAP camera zoom (z - 30, 1.4s power3.inOut) with infinite loop wrapping via modulo. All arc objects tracked in `arcObjects[]` for proper disposal on scene change.
+- **Arc System**: 8 unique 3D scenes (Grand Line, East Blue, Alabasta, Skypiea, Water 7, Marineford, Dressrosa, Wano). Each builder sets scene.background, scene.fog, custom geometry, particles, and lighting. Click navigation uses GSAP camera zoom (z - 30, 1.4s power3.inOut). All arc objects tracked in `arcObjects[]` for proper disposal on scene change.
+- **Credits Screen**: After Wano (arc 7), next click shows credits scene (black bg, 500 drifting stars) with GSAP stagger fade-in of 4 lines. Clicking from credits does reverse zoom (z + 30) back to Arc 0.
+- **Navigation Flow**: Arc 0→1→2→3→4→5→6→7→Credits→Arc 0→... (infinite). ArrowLeft goes backward.
 - **`arcAnimateFn`**: Per-arc callback for per-frame animation (ocean waves, particle drift, cage rotation, etc.)
-- **`window.__threejsState`**: Exposes scene, camera, renderer, composer, clock, THREE, gsap, bloomPass, getCurrentArc, loadArcScene, updateUI, clearScene for future prompt extensions
+- **Input**: Click/touchstart (mobile), Space/ArrowRight (forward), ArrowLeft (backward). Mobile uses touchstart instead of click.
+- **Accessibility**: `prefers-reduced-motion` disables zoom tweens and uses instant scene swaps. CSS also disables animations.
+- **Mobile Optimization**: On `width < 768px`, particle counts reduced by 75% via `pc()` helper, ocean segments reduced to 40x40.
+- **`window.__threejsState`**: Exposes scene, camera, renderer, composer, clock, THREE, gsap, bloomPass, getCurrentArc, isCredits, loadArcScene, updateUI, clearScene, navigateForward, navigateBack
 
 ### Backend
 

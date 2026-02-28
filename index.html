@@ -129,6 +129,42 @@
       animation: pulse-prompt 1.5s ease-in-out infinite;
     }
 
+    #flash-overlay {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: white; opacity: 0;
+      z-index: 999; pointer-events: none;
+    }
+
+    #scan-line {
+      position: absolute;
+      left: 0; top: 50%;
+      width: 100%; height: 2px;
+      background: #FFCD00;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .progress-dot { position: relative; }
+
+    .progress-dot.ripple::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid;
+      border-color: inherit;
+      animation: dot-ripple 0.8s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes dot-ripple {
+      0% { width: 10px; height: 10px; opacity: 1; }
+      100% { width: 30px; height: 30px; opacity: 0; }
+    }
+
     @keyframes pulse-prompt {
       0%, 100% { opacity: 1.0; }
       50% { opacity: 0.4; }
@@ -147,10 +183,12 @@
 
   <div id="canvas-mount" data-testid="threejs-canvas-mount"></div>
   <div id="vignette" data-testid="vignette-overlay"></div>
+  <div id="flash-overlay" data-testid="flash-overlay"></div>
 
   <div id="title-container" data-testid="arc-title-container">
     <h1 id="arc-title" data-testid="arc-title">SET SAIL</h1>
     <p id="arc-tagline" data-testid="arc-tagline">The Grand Line awaits — click to begin</p>
+    <div id="scan-line" data-testid="scan-line"></div>
   </div>
 
   <div id="credits-container" data-testid="credits-container">
@@ -216,6 +254,10 @@
       var promptContainerEl = document.getElementById("click-prompt-container");
       var dotsEl = document.getElementById("progress-dots");
       var creditsEl = document.getElementById("credits-container");
+      var flashEl = document.getElementById("flash-overlay");
+      var scanLineEl = document.getElementById("scan-line");
+      var vignetteEl = document.getElementById("vignette");
+      var camTilt = { value: 0 };
 
       var THREE = window.THREE;
       var gsap = window.gsap;
@@ -971,6 +1013,10 @@
         }
       }
 
+      function fadeOutUI() {
+        gsap.to(titleContainerEl, { y: -30, opacity: 0, duration: 0.4, ease: "power2.in" });
+      }
+
       function updateUI(index) {
         var arc = ARCS[index];
 
@@ -984,6 +1030,7 @@
         var dots = dotsEl.querySelectorAll("[data-dot]");
         for (var i = 0; i < dots.length; i++) {
           var isActive = i === index;
+          dots[i].classList.remove("ripple");
           dots[i].style.backgroundColor = isActive ? arc.color : "transparent";
           dots[i].style.borderColor = arc.color;
           dots[i].style.boxShadow = isActive
@@ -992,22 +1039,29 @@
           dots[i].style.width = isActive ? "12px" : "10px";
           dots[i].style.height = isActive ? "12px" : "10px";
         }
+        void dots[index].offsetWidth;
+        dots[index].classList.add("ripple");
+        gsap.fromTo(dots[index], { scale: 1 }, { scale: 1.6, duration: 0.3, ease: "elastic.out(1, 0.4)", yoyo: true, repeat: 1 });
 
-        gsap.to(titleContainerEl, {
-          y: -30, opacity: 0, duration: 0.5, ease: "power2.in",
-          onComplete: function () {
-            titleEl.textContent = arc.title;
-            titleEl.style.color = arc.color;
-            titleEl.style.textShadow = "0 0 20px " + hexToRgba(arc.color, 0.6) + ", 0 0 40px " + hexToRgba(arc.color, 0.3) + ", 0 0 80px " + hexToRgba(arc.color, 0.15);
-            taglineEl.textContent = arc.tagline;
-            promptEl.textContent = arc.prompt;
+        titleEl.textContent = arc.title;
+        titleEl.style.color = arc.color;
+        titleEl.style.textShadow = "0 0 20px " + hexToRgba(arc.color, 0.6) + ", 0 0 40px " + hexToRgba(arc.color, 0.3) + ", 0 0 80px " + hexToRgba(arc.color, 0.15);
+        taglineEl.textContent = arc.tagline;
+        promptEl.textContent = arc.prompt;
 
-            gsap.fromTo(titleContainerEl,
-              { y: 40, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.9, ease: "power2.out" }
-            );
-          }
-        });
+        gsap.set(titleContainerEl, { opacity: 1, y: 0 });
+        gsap.fromTo(titleEl,
+          { opacity: 0, scale: 1.4, y: 30 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.9, ease: "back.out(1.7)" }
+        );
+        gsap.fromTo(taglineEl,
+          { opacity: 0, letterSpacing: "0.4em" },
+          { opacity: 1, letterSpacing: "0.1em", duration: 1.1, ease: "power2.out", delay: 0.2 }
+        );
+        gsap.fromTo(scanLineEl,
+          { x: "-100%", opacity: 1 },
+          { x: "100%", opacity: 0, duration: 0.8, ease: "power2.inOut" }
+        );
       }
 
       function showCreditsUI() {
@@ -1054,6 +1108,21 @@
         gsap.to(promptContainerEl, { opacity: 1, duration: 0.5 });
       }
 
+      function startZoomEffects() {
+        fadeOutUI();
+        renderer.domElement.style.transition = "filter 0.3s ease";
+        renderer.domElement.style.filter = "blur(4px)";
+        gsap.to(camTilt, { value: 0.12, duration: 0.7, ease: "power2.inOut" });
+        gsap.to(camTilt, { value: 0, duration: 0.7, delay: 0.7, ease: "power2.inOut" });
+        gsap.to(flashEl, { opacity: 0.5, duration: 0.2, delay: 0.5 });
+        gsap.to(flashEl, { opacity: 0, duration: 0.2, delay: 0.7 });
+      }
+
+      function endZoomEffects() {
+        renderer.domElement.style.filter = "blur(0px)";
+        camTilt.value = 0;
+      }
+
       function navigateForward() {
         if (isTransitioning) return;
         isTransitioning = true;
@@ -1064,9 +1133,11 @@
             currentArcIndex = 0; showingCredits = false;
             hideCreditsUI(); updateUI(0); isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
               onComplete: function () {
+                endZoomEffects();
                 clearScene(); loadArcScene(0); camera.position.z = 20;
                 currentArcIndex = 0; showingCredits = false;
                 hideCreditsUI(); updateUI(0); isTransitioning = false;
@@ -1081,9 +1152,11 @@
             clearScene(); buildCreditsScene();
             showingCredits = true; showCreditsUI(); isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
               onComplete: function () {
+                endZoomEffects();
                 clearScene(); buildCreditsScene(); camera.position.z = 20;
                 showingCredits = true; showCreditsUI(); isTransitioning = false;
               }
@@ -1097,9 +1170,11 @@
           loadArcScene(nextIndex); camera.position.z = 20;
           currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
         } else {
+          startZoomEffects();
           gsap.to(camera.position, {
             z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
             onComplete: function () {
+              endZoomEffects();
               loadArcScene(nextIndex); camera.position.z = 20;
               currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
             }
@@ -1116,9 +1191,11 @@
             showingCredits = false; hideCreditsUI(); updateUI(7);
             currentArcIndex = 7; isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
               onComplete: function () {
+                endZoomEffects();
                 clearScene(); loadArcScene(7); camera.position.z = 20;
                 showingCredits = false; hideCreditsUI(); updateUI(7);
                 currentArcIndex = 7; isTransitioning = false;
@@ -1134,9 +1211,11 @@
           loadArcScene(prevIndex); camera.position.z = 20;
           currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
         } else {
+          startZoomEffects();
           gsap.to(camera.position, {
             z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
             onComplete: function () {
+              endZoomEffects();
               loadArcScene(prevIndex); camera.position.z = 20;
               currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
             }
@@ -1169,14 +1248,15 @@
 
       var targetX = 0;
       var targetY = 0;
-      var baseCamX = 0;
-      var baseCamY = 4;
-      var baseCamZ = 20;
+      var baseCamY = 5;
       var parallaxStrength = 3;
 
       window.addEventListener("mousemove", function (e) {
         targetX = (e.clientX / window.innerWidth - 0.5) * 2;
         targetY = -(e.clientY / window.innerHeight - 0.5) * 2;
+        var vx = 50 + targetX * 10;
+        var vy = 50 - targetY * 10;
+        vignetteEl.style.background = "radial-gradient(ellipse at " + vx + "% " + vy + "%, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%)";
       });
 
       window.addEventListener("resize", function () {
@@ -1197,11 +1277,28 @@
 
         if (arcAnimateFn) arcAnimateFn(t);
 
+        for (var ao = 0; ao < arcObjects.length; ao++) {
+          var aobj = arcObjects[ao];
+          if (aobj.isMesh || aobj.isGroup) {
+            aobj.scale.setScalar(1 + Math.sin(t * 1.2) * 0.025);
+          }
+          if (aobj.isPoints) {
+            var wp = aobj.geometry.attributes.position;
+            for (var wi = 0; wi < wp.count; wi++) {
+              wp.array[wi * 3] += Math.sin(t + wi * 0.1) * 0.003;
+            }
+            wp.needsUpdate = true;
+          }
+        }
+
         if (!isTransitioning) {
-          camera.position.x += (baseCamX + targetX * parallaxStrength - camera.position.x) * 0.05;
-          camera.position.y += (baseCamY + targetY * parallaxStrength - camera.position.y) * 0.05;
+          var idleX = Math.sin(t * 0.08) * 3;
+          var idleY = baseCamY + Math.sin(t * 0.15) * 0.8;
+          camera.position.x += (idleX + targetX * parallaxStrength - camera.position.x) * 0.05;
+          camera.position.y += (idleY + targetY * parallaxStrength - camera.position.y) * 0.05;
         }
         camera.lookAt(0, 0, 0);
+        camera.rotation.x += camTilt.value;
 
         if (composer) {
           composer.render();

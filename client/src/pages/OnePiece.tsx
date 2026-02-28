@@ -937,12 +937,19 @@ export default function OnePiece() {
       // ── UI UPDATE ─────────────────────────────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
+      const fadeOutUI = () => {
+        const titleContainer = titleContainerRef.current;
+        gsap.to(titleContainer, { y: -30, opacity: 0, duration: 0.4, ease: "power2.in" });
+      };
+
       const updateUI = (index: number) => {
         const arc = ARCS[index];
         const titleEl = titleRef.current;
         const tagEl = taglineRef.current;
         const promptEl = promptRef.current;
         const dotsEl = dotsRef.current;
+        const titleContainer = titleContainerRef.current;
+        const scanLine = document.getElementById("scan-line-react");
 
         if (bloomPass) {
           gsap.to(bloomPass, {
@@ -958,6 +965,7 @@ export default function OnePiece() {
           const dots = dotsEl.querySelectorAll("[data-dot]");
           dots.forEach((dot: any, i: number) => {
             const isActive = i === index;
+            dot.classList.remove("ripple");
             dot.style.backgroundColor = isActive ? arc.color : "transparent";
             dot.style.borderColor = arc.color;
             dot.style.boxShadow = isActive
@@ -966,31 +974,34 @@ export default function OnePiece() {
             dot.style.width = isActive ? "12px" : "10px";
             dot.style.height = isActive ? "12px" : "10px";
           });
+          void (dots[index] as HTMLElement).offsetWidth;
+          (dots[index] as HTMLElement).classList.add("ripple");
+          gsap.fromTo(dots[index], { scale: 1 }, { scale: 1.6, duration: 0.3, ease: "elastic.out(1, 0.4)", yoyo: true, repeat: 1 });
         }
 
-        const titleContainer = titleContainerRef.current;
+        if (titleEl) {
+          titleEl.textContent = arc.title;
+          titleEl.style.color = arc.color;
+          titleEl.style.textShadow = `0 0 20px ${hexToRgba(arc.color, 0.6)}, 0 0 40px ${hexToRgba(arc.color, 0.3)}, 0 0 80px ${hexToRgba(arc.color, 0.15)}`;
+        }
+        if (tagEl) tagEl.textContent = arc.tagline;
+        if (promptEl) promptEl.textContent = arc.prompt;
 
-        gsap.to(titleContainer, {
-          y: -30,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in",
-          onComplete: () => {
-            if (titleEl) {
-              titleEl.textContent = arc.title;
-              titleEl.style.color = arc.color;
-              titleEl.style.textShadow = `0 0 20px ${hexToRgba(arc.color, 0.6)}, 0 0 40px ${hexToRgba(arc.color, 0.3)}, 0 0 80px ${hexToRgba(arc.color, 0.15)}`;
-            }
-            if (tagEl) tagEl.textContent = arc.tagline;
-            if (promptEl) promptEl.textContent = arc.prompt;
-
-            gsap.fromTo(
-              titleContainer,
-              { y: 40, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.9, ease: "power2.out" }
-            );
-          },
-        });
+        gsap.set(titleContainer, { opacity: 1, y: 0 });
+        gsap.fromTo(titleEl,
+          { opacity: 0, scale: 1.4, y: 30 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.9, ease: "back.out(1.7)" }
+        );
+        gsap.fromTo(tagEl,
+          { opacity: 0, letterSpacing: "0.4em" },
+          { opacity: 1, letterSpacing: "0.1em", duration: 1.1, ease: "power2.out", delay: 0.2 }
+        );
+        if (scanLine) {
+          gsap.fromTo(scanLine,
+            { x: "-100%", opacity: 1 },
+            { x: "100%", opacity: 0, duration: 0.8, ease: "power2.inOut" }
+          );
+        }
       };
 
       // ══════════════════════════════════════════════════════════════════════
@@ -1076,6 +1087,24 @@ export default function OnePiece() {
       // ── NAVIGATION LOGIC ──────────────────────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
+      const startZoomEffects = () => {
+        fadeOutUI();
+        renderer.domElement.style.transition = "filter 0.3s ease";
+        renderer.domElement.style.filter = "blur(4px)";
+        gsap.to(camTilt, { value: 0.12, duration: 0.7, ease: "power2.inOut" });
+        gsap.to(camTilt, { value: 0, duration: 0.7, delay: 0.7, ease: "power2.inOut" });
+        const flashEl = document.getElementById("flash-overlay-react");
+        if (flashEl) {
+          gsap.to(flashEl, { opacity: 0.5, duration: 0.2, delay: 0.5 });
+          gsap.to(flashEl, { opacity: 0, duration: 0.2, delay: 0.7 });
+        }
+      };
+
+      const endZoomEffects = () => {
+        renderer.domElement.style.filter = "blur(0px)";
+        camTilt.value = 0;
+      };
+
       const navigateForward = () => {
         if (isTransitioning) return;
         isTransitioning = true;
@@ -1091,11 +1120,13 @@ export default function OnePiece() {
             updateUI(0);
             isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z + 30,
               duration: 1.4,
               ease: "power3.inOut",
               onComplete: () => {
+                endZoomEffects();
                 clearScene();
                 loadArcScene(0);
                 camera.position.z = 20;
@@ -1118,11 +1149,13 @@ export default function OnePiece() {
             showCreditsUI();
             isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z - 30,
               duration: 1.4,
               ease: "power3.inOut",
               onComplete: () => {
+                endZoomEffects();
                 clearScene();
                 buildCreditsScene();
                 camera.position.z = 20;
@@ -1143,11 +1176,13 @@ export default function OnePiece() {
           updateUI(nextIndex);
           isTransitioning = false;
         } else {
+          startZoomEffects();
           gsap.to(camera.position, {
             z: camera.position.z - 30,
             duration: 1.4,
             ease: "power3.inOut",
             onComplete: () => {
+              endZoomEffects();
               loadArcScene(nextIndex);
               camera.position.z = 20;
               currentArcIndex = nextIndex;
@@ -1172,11 +1207,13 @@ export default function OnePiece() {
             currentArcIndex = 7;
             isTransitioning = false;
           } else {
+            startZoomEffects();
             gsap.to(camera.position, {
               z: camera.position.z + 30,
               duration: 1.4,
               ease: "power3.inOut",
               onComplete: () => {
+                endZoomEffects();
                 clearScene();
                 loadArcScene(7);
                 camera.position.z = 20;
@@ -1200,11 +1237,13 @@ export default function OnePiece() {
           updateUI(prevIndex);
           isTransitioning = false;
         } else {
+          startZoomEffects();
           gsap.to(camera.position, {
             z: camera.position.z + 30,
             duration: 1.4,
             ease: "power3.inOut",
             onComplete: () => {
+              endZoomEffects();
               loadArcScene(prevIndex);
               camera.position.z = 20;
               currentArcIndex = prevIndex;
@@ -1248,14 +1287,18 @@ export default function OnePiece() {
 
       let targetX = 0;
       let targetY = 0;
-      const baseCamX = 0;
-      const baseCamY = 4;
-      const baseCamZ = 20;
+      const baseCamY = 5;
       const parallaxStrength = 3;
 
       const onMouseMove = (e: MouseEvent) => {
         targetX = (e.clientX / window.innerWidth - 0.5) * 2;
         targetY = -(e.clientY / window.innerHeight - 0.5) * 2;
+        const vignetteEl = document.querySelector("[data-testid='vignette-overlay']") as HTMLElement;
+        if (vignetteEl) {
+          const vx = 50 + targetX * 10;
+          const vy = 50 - targetY * 10;
+          vignetteEl.style.background = `radial-gradient(ellipse at ${vx}% ${vy}%, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%)`;
+        }
       };
       window.addEventListener("mousemove", onMouseMove);
 
@@ -1273,6 +1316,8 @@ export default function OnePiece() {
       // ── ANIMATE LOOP ──────────────────────────────────────────────────────
       // ══════════════════════════════════════════════════════════════════════
 
+      const camTilt = { value: 0 };
+
       let animFrameId: number;
       const animate = () => {
         animFrameId = requestAnimationFrame(animate);
@@ -1283,11 +1328,28 @@ export default function OnePiece() {
 
         if (arcAnimateFn) arcAnimateFn(t);
 
+        for (let ao = 0; ao < arcObjects.length; ao++) {
+          const aobj = arcObjects[ao];
+          if (aobj.isMesh || aobj.isGroup) {
+            aobj.scale.setScalar(1 + Math.sin(t * 1.2) * 0.025);
+          }
+          if (aobj.isPoints) {
+            const wp = aobj.geometry.attributes.position;
+            for (let wi = 0; wi < wp.count; wi++) {
+              wp.array[wi * 3] += Math.sin(t + wi * 0.1) * 0.003;
+            }
+            wp.needsUpdate = true;
+          }
+        }
+
         if (!isTransitioning) {
-          camera.position.x += (baseCamX + targetX * parallaxStrength - camera.position.x) * 0.05;
-          camera.position.y += (baseCamY + targetY * parallaxStrength - camera.position.y) * 0.05;
+          const idleX = Math.sin(t * 0.08) * 3;
+          const idleY = baseCamY + Math.sin(t * 0.15) * 0.8;
+          camera.position.x += (idleX + targetX * parallaxStrength - camera.position.x) * 0.05;
+          camera.position.y += (idleY + targetY * parallaxStrength - camera.position.y) * 0.05;
         }
         camera.lookAt(0, 0, 0);
+        camera.rotation.x += camTilt.value;
 
         if (composer) {
           composer.render();
@@ -1378,6 +1440,20 @@ export default function OnePiece() {
       />
 
       <div
+        id="flash-overlay-react"
+        data-testid="flash-overlay"
+        style={{
+          position: "fixed",
+          top: 0, left: 0,
+          width: "100vw", height: "100vh",
+          background: "white",
+          opacity: 0,
+          zIndex: 999,
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
         ref={titleContainerRef}
         data-testid="arc-title-container"
         style={{
@@ -1420,6 +1496,18 @@ export default function OnePiece() {
         >
           {ARCS[0].tagline}
         </p>
+        <div
+          id="scan-line-react"
+          data-testid="scan-line"
+          style={{
+            position: "absolute",
+            left: 0, top: "50%",
+            width: "100%", height: "2px",
+            background: "#FFCD00",
+            opacity: 0,
+            pointerEvents: "none",
+          }}
+        />
       </div>
 
       <div
@@ -1558,6 +1646,23 @@ export default function OnePiece() {
         @keyframes pulse-prompt {
           0%, 100% { opacity: 1.0; }
           50% { opacity: 0.4; }
+        }
+        [data-dot] { position: relative; }
+        [data-dot].ripple::after {
+          content: '';
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 10px; height: 10px;
+          border-radius: 50%;
+          border: 1.5px solid;
+          border-color: inherit;
+          animation: dot-ripple 0.8s ease-out forwards;
+          pointer-events: none;
+        }
+        @keyframes dot-ripple {
+          0% { width: 10px; height: 10px; opacity: 1; }
+          100% { width: 30px; height: 30px; opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
           * {

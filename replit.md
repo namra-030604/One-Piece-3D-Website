@@ -35,10 +35,21 @@ Preferred communication style: Simple, everyday language.
 - **Credits Screen**: After Wano (arc 7), next click shows credits scene (black bg, 500 drifting stars) with GSAP stagger fade-in of 4 lines. Clicking from credits does reverse zoom (z + 30) back to Arc 0.
 - **Navigation Flow**: Arc 0→1→2→3→4→5→6→7→Credits→Arc 0→... (infinite). ArrowLeft goes backward.
 - **`arcAnimateFn`**: Per-arc callback for per-frame animation (ocean waves, particle drift, cage rotation, etc.)
+- **Animation Upgrades**:
+  - **Text sync**: `loadArcScene()` + text update + GSAP title entrance all fire in the same `onComplete` callback (no separate setTimeout or fade-out-then-fade-in)
+  - **Zoom transition**: Canvas blur(4px) at start, camera rotation.x tilt (0→0.12→0 via `camTilt` object), white flash div (`#flash-overlay`) opacity 0→0.5→0 at midpoint, blur removed in `endZoomEffects()`
+  - **Title entrance**: Elastic scale 1.4→1 + y 30→0 with `back.out(1.7)`, tagline letter-spacing 0.4em→0.1em, gold scan line div sweeps x:-100%→100%
+  - **Idle camera**: Orbit via `Math.sin(t*0.08)*3` on X, breathing via `baseCamY + Math.sin(t*0.15)*0.8` on Y, mouse parallax adds on top
+  - **Object animations**: All Mesh/Group objects get scale pulse `1 + Math.sin(t*1.2)*0.025`, all Points get per-particle X wobble `+= Math.sin(t+i*0.1)*0.003`
+  - **Progress dots**: GSAP elastic bounce `scale 1→1.6→1` with `elastic.out(1, 0.4)`, CSS `.ripple::after` pseudo-element with `dot-ripple` keyframe animation
+  - **Vignette**: On mousemove, radial-gradient center follows cursor by 10% (`50 + targetX*10`)
+  - **Helper functions**: `fadeOutUI()`, `startZoomEffects()`, `endZoomEffects()` centralize transition effects
 - **Input**: Click/touchstart (mobile), Space/ArrowRight (forward), ArrowLeft (backward). Mobile uses touchstart instead of click.
 - **Accessibility**: `prefers-reduced-motion` disables zoom tweens and uses instant scene swaps. CSS also disables animations.
 - **Mobile Optimization**: On `width < 768px`, particle counts reduced by 75% via `pc()` helper, ocean segments reduced to 40x40.
 - **`window.__threejsState`**: Exposes scene, camera, renderer, composer, clock, THREE, gsap, bloomPass, getCurrentArc, isCredits, loadArcScene, updateUI, clearScene, navigateForward, navigateBack
+- **New HTML elements**: `#flash-overlay` (white, z-index 999, pointer-events none), `#scan-line` (2px gold bar, absolute in title-container). In React version these have `-react` suffix IDs.
+- **New CSS**: `#flash-overlay`, `#scan-line`, `.progress-dot.ripple::after`, `@keyframes dot-ripple`
 
 ### Backend
 

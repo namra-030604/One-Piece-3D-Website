@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -7,9 +7,21 @@ declare global {
   }
 }
 
+const ARC_NAMES = [
+  "Grand Line",
+  "East Blue",
+  "Alabasta",
+  "Skypiea",
+  "Water 7",
+  "Marineford",
+  "Dressrosa",
+  "Wano",
+];
+
 export default function OnePiece() {
   const mountRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
+  const [currentArc, setCurrentArc] = useState(0);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -63,7 +75,6 @@ export default function OnePiece() {
 
       initializedRef.current = true;
 
-      // ── Scene & Renderer ──────────────────────────────────────────────────
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x050a1a);
       scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
@@ -75,13 +86,11 @@ export default function OnePiece() {
       renderer.toneMappingExposure = 1.2;
       mountRef.current.appendChild(renderer.domElement);
 
-      // ── Camera ────────────────────────────────────────────────────────────
       const camera = new THREE.PerspectiveCamera(
         75, window.innerWidth / window.innerHeight, 0.1, 1000
       );
       camera.position.set(0, 4, 20);
 
-      // ── Post-processing ───────────────────────────────────────────────────
       let composer: any = null;
       try {
         composer = new THREE.EffectComposer(renderer);
@@ -99,11 +108,8 @@ export default function OnePiece() {
         composer = null;
       }
 
-      // ══════════════════════════════════════════════════════════════════════
       // ── GRAND LINE INTRO SCENE ────────────────────────────────────────────
-      // ══════════════════════════════════════════════════════════════════════
 
-      // ── 1. Animated Ocean ─────────────────────────────────────────────────
       const oceanGeo = new THREE.PlaneGeometry(200, 200, 80, 80);
       const oceanMat = new THREE.MeshPhongMaterial({
         color: 0x1a4a8a,
@@ -125,7 +131,6 @@ export default function OnePiece() {
         oceanOriginalY.push(oceanPositionAttr.getZ(i));
       }
 
-      // ── 2. Star field (2000 points) ───────────────────────────────────────
       const starCount = 2000;
       const starGeo = new THREE.BufferGeometry();
       const starPositions = new Float32Array(starCount * 3);
@@ -145,7 +150,6 @@ export default function OnePiece() {
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
 
-      // ── 3. Spinning Gold Torus (Straw Hat ring) ───────────────────────────
       const torusGeo = new THREE.TorusGeometry(3, 0.3, 16, 100);
       const torusMat = new THREE.MeshStandardMaterial({
         color: 0xffcd00,
@@ -158,7 +162,6 @@ export default function OnePiece() {
       torus.position.set(0, 2, 0);
       scene.add(torus);
 
-      // ── 4. Lights ─────────────────────────────────────────────────────────
       const ambientLight = new THREE.AmbientLight(0x1a2a5a, 1.5);
       scene.add(ambientLight);
 
@@ -170,7 +173,6 @@ export default function OnePiece() {
       pointLight.position.set(-5, 3, 0);
       scene.add(pointLight);
 
-      // ── Clock & Parallax State ────────────────────────────────────────────
       const clock = new THREE.Clock();
       let targetX = 0;
       let targetY = 0;
@@ -185,7 +187,6 @@ export default function OnePiece() {
       };
       window.addEventListener("mousemove", onMouseMove);
 
-      // ── Resize ────────────────────────────────────────────────────────────
       const onResize = () => {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -196,13 +197,11 @@ export default function OnePiece() {
       };
       window.addEventListener("resize", onResize);
 
-      // ── Animate Loop ──────────────────────────────────────────────────────
       let animFrameId: number;
       const animate = () => {
         animFrameId = requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
 
-        // ─ Ocean wave displacement ──────────────────────────────
         for (let i = 0; i < oceanPositionAttr.count; i++) {
           const x = oceanPositionAttr.getX(i);
           const y = oceanPositionAttr.getY(i);
@@ -214,22 +213,18 @@ export default function OnePiece() {
         oceanPositionAttr.needsUpdate = true;
         ocean.geometry.computeVertexNormals();
 
-        // ─ Torus spin + float ───────────────────────────────────
         torus.rotation.y += 0.003;
         torus.rotation.x += 0.001;
         torus.position.y = 2 + Math.sin(t * 0.8) * 0.4;
 
-        // ─ Slow star field rotation ─────────────────────────────
         stars.rotation.y += 0.0001;
         stars.rotation.x += 0.00005;
 
-        // ─ Mouse parallax camera ────────────────────────────────
         camera.position.x += (baseCamX + targetX * parallaxStrength - camera.position.x) * 0.05;
         camera.position.y += (baseCamY + targetY * parallaxStrength - camera.position.y) * 0.05;
         camera.position.z = baseCamZ;
         camera.lookAt(0, 0, 0);
 
-        // ─ Render ───────────────────────────────────────────────
         if (composer) {
           composer.render();
         } else {
@@ -238,7 +233,6 @@ export default function OnePiece() {
       };
       animate();
 
-      // ── Cleanup ───────────────────────────────────────────────────────────
       (mountRef.current as any).__cleanup = () => {
         cancelAnimationFrame(animFrameId);
         window.removeEventListener("mousemove", onMouseMove);
@@ -285,19 +279,157 @@ export default function OnePiece() {
   }, []);
 
   return (
-    <div
-      ref={mountRef}
-      data-testid="threejs-canvas-mount"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 0,
-        background: "#050a1a",
-        overflow: "hidden",
-      }}
-    />
+    <>
+      {/* ── Three.js Canvas Mount ─────────────────────────────────────────── */}
+      <div
+        ref={mountRef}
+        data-testid="threejs-canvas-mount"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          background: "#050a1a",
+          overflow: "hidden",
+        }}
+      />
+
+      {/* ── Vignette Overlay ──────────────────────────────────────────────── */}
+      <div
+        data-testid="vignette-overlay"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 2,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%)",
+        }}
+      />
+
+      {/* ── Arc Title + Tagline ───────────────────────────────────────────── */}
+      <div
+        data-testid="arc-title-container"
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 10,
+          textAlign: "center",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      >
+        <h1
+          data-testid="arc-title"
+          style={{
+            fontFamily: "'Pirata One', cursive",
+            fontSize: "clamp(3rem, 8vw, 6rem)",
+            color: "#FFCD00",
+            margin: 0,
+            lineHeight: 1.1,
+            textShadow:
+              "0 0 20px rgba(255,205,0,0.6), 0 0 40px rgba(255,205,0,0.3), 0 0 80px rgba(255,205,0,0.15)",
+            letterSpacing: "0.04em",
+          }}
+        >
+          SET SAIL
+        </h1>
+        <p
+          data-testid="arc-tagline"
+          style={{
+            fontFamily: "'Cinzel', serif",
+            fontSize: "clamp(0.85rem, 1.8vw, 1.1rem)",
+            color: "#acd6f5",
+            margin: "1rem 0 0 0",
+            letterSpacing: "0.08em",
+            textShadow: "0 0 12px rgba(172,214,245,0.3)",
+            lineHeight: 1.6,
+          }}
+        >
+          The Grand Line awaits — click to begin
+        </p>
+      </div>
+
+      {/* ── Progress Dots ─────────────────────────────────────────────────── */}
+      <div
+        data-testid="progress-dots"
+        style={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 100,
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          alignItems: "center",
+          pointerEvents: "none",
+        }}
+      >
+        {ARC_NAMES.map((name, i) => {
+          const isActive = i === currentArc;
+          return (
+            <div
+              key={name}
+              data-testid={`progress-dot-${i}`}
+              title={name}
+              style={{
+                width: isActive ? "12px" : "10px",
+                height: isActive ? "12px" : "10px",
+                borderRadius: "50%",
+                border: "1.5px solid #FFCD00",
+                backgroundColor: isActive ? "#FFCD00" : "transparent",
+                boxShadow: isActive
+                  ? "0 0 8px rgba(255,205,0,0.7), 0 0 16px rgba(255,205,0,0.35)"
+                  : "none",
+                transition: "all 0.4s ease",
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* ── Click Prompt ──────────────────────────────────────────────────── */}
+      <div
+        data-testid="click-prompt"
+        style={{
+          position: "fixed",
+          bottom: "2.5rem",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 100,
+          textAlign: "center",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Pirata One', cursive",
+            fontSize: "1rem",
+            color: "rgba(255,255,255,0.6)",
+            letterSpacing: "0.1em",
+            animation: "pulse-prompt 1.5s ease-in-out infinite",
+            display: "inline-block",
+          }}
+        >
+          Click anywhere to set sail
+        </span>
+      </div>
+
+      {/* ── Pulse animation keyframes ─────────────────────────────────────── */}
+      <style>{`
+        @keyframes pulse-prompt {
+          0%, 100% { opacity: 1.0; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+    </>
   );
 }

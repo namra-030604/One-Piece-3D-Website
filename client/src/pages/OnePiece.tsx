@@ -20,56 +20,56 @@ const ARCS: ArcData[] = [
     title: "SET SAIL",
     tagline: "The Grand Line awaits — click to begin",
     color: "#FFCD00",
-    bloom: [1.4, 0.8, 0.2],
+    bloom: [0.8, 0.4, 0.5],
     prompt: "Click anywhere to set sail",
   },
   {
     title: "EAST BLUE",
     tagline: "Where it all began. A boy, a dream, a straw hat.",
     color: "#20B2AA",
-    bloom: [0.6, 0.5, 0.3],
+    bloom: [0.3, 0.3, 0.7],
     prompt: "Click to continue the voyage",
   },
   {
     title: "ALABASTA",
     tagline: "A kingdom on the brink. Loyalty tested in the sands.",
     color: "#DAA520",
-    bloom: [1.0, 0.6, 0.25],
+    bloom: [0.5, 0.3, 0.6],
     prompt: "Click to cross the desert",
   },
   {
     title: "SKYPIEA",
     tagline: "Above the clouds lies a golden city — and a god.",
     color: "#228B22",
-    bloom: [1.8, 1.0, 0.15],
+    bloom: [0.6, 0.4, 0.55],
     prompt: "Click to ascend",
   },
   {
     title: "WATER 7",
     tagline: "A crew torn apart. A reckoning at Enies Lobby.",
     color: "#4169E1",
-    bloom: [1.2, 0.7, 0.2],
+    bloom: [0.5, 0.3, 0.6],
     prompt: "Click to face the storm",
   },
   {
     title: "MARINEFORD",
     tagline: "The war that changed the world. Nothing was ever the same.",
     color: "#8B0000",
-    bloom: [2.0, 1.2, 0.1],
+    bloom: [1.0, 0.5, 0.3],
     prompt: "Click to enter the war",
   },
   {
     title: "DRESSROSA",
     tagline: "Beneath the petals, a dictator's chains.",
     color: "#EE82EE",
-    bloom: [1.5, 0.9, 0.18],
+    bloom: [0.6, 0.35, 0.55],
     prompt: "Click to shatter the cage",
   },
   {
     title: "WANO",
     tagline: "An isolated nation under the shogun's shadow.",
     color: "#DC143C",
-    bloom: [1.6, 0.7, 0.2],
+    bloom: [0.7, 0.4, 0.4],
     prompt: "Click to ignite the dawn",
   },
 ];
@@ -239,7 +239,7 @@ export default function OnePiece() {
 
       const buildGrandLine = () => {
         scene.background = new THREE.Color(0x050a1a);
-        scene.fog = new THREE.FogExp2(0x050a1a, 0.008);
+        scene.fog = null;
 
         const oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSegHigh, oceanSegHigh);
         const oceanMat = new THREE.MeshPhongMaterial({
@@ -257,15 +257,15 @@ export default function OnePiece() {
 
         const torusGeo = new THREE.TorusGeometry(3, 0.3, 16, 100);
         const torusMat = new THREE.MeshStandardMaterial({
-          color: 0xffcd00, emissive: 0xd70000, emissiveIntensity: 0.4,
+          color: 0xffcd00, emissive: 0xd70000, emissiveIntensity: 0.3,
           metalness: 0.7, roughness: 0.25,
         });
         const torus = new THREE.Mesh(torusGeo, torusMat);
         torus.position.set(0, 2, 0);
         addArcObject(torus);
 
-        addArcObject(new THREE.AmbientLight(0x1a2a5a, 1.5));
-        const dir = new THREE.DirectionalLight(0xffcd00, 1);
+        addArcObject(new THREE.AmbientLight(0x1a2a5a, 0.4));
+        const dir = new THREE.DirectionalLight(0xffcd00, 0.8);
         dir.position.set(5, 10, 5);
         addArcObject(dir);
         const pt = new THREE.PointLight(0xd70000, 2, 30);
@@ -291,11 +291,11 @@ export default function OnePiece() {
       // ══════════════════════════════════════════════════════════════════════
 
       const buildEastBlue = () => {
-        scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.FogExp2(0x87ceeb, 0.005);
+        scene.background = new THREE.Color(0x001a2e);
+        scene.fog = new THREE.FogExp2(0x001a2e, 0.008);
 
-        addArcObject(new THREE.AmbientLight(0x87ceeb, 1.2));
-        const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+        addArcObject(new THREE.AmbientLight(0x87ceeb, 0.4));
+        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
         dir.position.set(5, 10, 5);
         addArcObject(dir);
         const warmPt = new THREE.PointLight(0x20b2aa, 0.8, 40);
@@ -379,11 +379,11 @@ export default function OnePiece() {
       // ══════════════════════════════════════════════════════════════════════
 
       const buildAlabasta = () => {
-        scene.background = new THREE.Color(0x1a0a00);
-        scene.fog = new THREE.FogExp2(0x1a0a00, 0.006);
+        scene.background = new THREE.Color(0x1a0d00);
+        scene.fog = new THREE.FogExp2(0x1a0d00, 0.012);
 
-        addArcObject(new THREE.AmbientLight(0xc2956c, 0.8));
-        const dir = new THREE.DirectionalLight(0xff8c00, 1.5);
+        addArcObject(new THREE.AmbientLight(0xc2956c, 0.4));
+        const dir = new THREE.DirectionalLight(0xff8c00, 0.8);
         dir.position.set(0, 15, 5);
         addArcObject(dir);
         const hotPt = new THREE.PointLight(0xff8c00, 1.0, 30);
@@ -447,10 +447,10 @@ export default function OnePiece() {
       // ══════════════════════════════════════════════════════════════════════
 
       const buildSkypiea = () => {
-        scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.FogExp2(0x87ceeb, 0.004);
+        scene.background = new THREE.Color(0x0a1a0a);
+        scene.fog = new THREE.FogExp2(0x0a1a0a, 0.006);
 
-        addArcObject(new THREE.AmbientLight(0x228b22, 0.6));
+        addArcObject(new THREE.AmbientLight(0x228b22, 0.4));
         const sun = new THREE.SpotLight(0xffcd00, 2.5, 100, Math.PI / 4);
         sun.position.set(0, 30, 10);
         addArcObject(sun);
@@ -528,11 +528,11 @@ export default function OnePiece() {
       // ══════════════════════════════════════════════════════════════════════
 
       const buildWater7 = () => {
-        scene.background = new THREE.Color(0x0a0a1f);
-        scene.fog = new THREE.FogExp2(0x0a0a1f, 0.01);
+        scene.background = new THREE.Color(0x00050f);
+        scene.fog = new THREE.FogExp2(0x00050f, 0.015);
 
-        addArcObject(new THREE.AmbientLight(0x708090, 1.0));
-        const dir = new THREE.DirectionalLight(0xb0c4de, 1.2);
+        addArcObject(new THREE.AmbientLight(0x708090, 0.4));
+        const dir = new THREE.DirectionalLight(0xb0c4de, 0.8);
         dir.position.set(0, 15, 5);
         addArcObject(dir);
         const stormPt = new THREE.PointLight(0x4169e1, 0.6, 30);
@@ -607,9 +607,9 @@ export default function OnePiece() {
 
       const buildMarineford = () => {
         scene.background = new THREE.Color(0x0d0000);
-        scene.fog = new THREE.FogExp2(0x1c0000, 0.02);
+        scene.fog = new THREE.FogExp2(0x0d0000, 0.02);
 
-        addArcObject(new THREE.AmbientLight(0x1c1c1c, 0.4));
+        addArcObject(new THREE.AmbientLight(0x1c1c1c, 0.6));
         const fire = new THREE.SpotLight(0xff4500, 2.0, 50, Math.PI / 3);
         fire.position.set(0, 15, 5);
         addArcObject(fire);
@@ -642,7 +642,7 @@ export default function OnePiece() {
           const s = 0.5 + Math.random() * 2;
           const debrisGeo = new THREE.BoxGeometry(s, s, s);
           const debrisMat = new THREE.MeshStandardMaterial({
-            color: 0x2f2f2f, emissive: 0x8b0000, emissiveIntensity: 0.35,
+            color: 0x2f2f2f, emissive: 0x8b0000, emissiveIntensity: 0.3,
           });
           const debris = new THREE.Mesh(debrisGeo, debrisMat);
           debris.position.set(
@@ -712,11 +712,11 @@ export default function OnePiece() {
       // ══════════════════════════════════════════════════════════════════════
 
       const buildDressrosa = () => {
-        scene.background = new THREE.Color(0x1a0020);
-        scene.fog = new THREE.FogExp2(0x1a0020, 0.006);
+        scene.background = new THREE.Color(0x0f0015);
+        scene.fog = new THREE.FogExp2(0x0f0015, 0.01);
 
-        addArcObject(new THREE.AmbientLight(0xee82ee, 0.8));
-        const dir = new THREE.DirectionalLight(0xffcd00, 1.0);
+        addArcObject(new THREE.AmbientLight(0xee82ee, 0.4));
+        const dir = new THREE.DirectionalLight(0xffcd00, 0.8);
         dir.position.set(5, 12, 5);
         addArcObject(dir);
         const pinkPt = new THREE.PointLight(0xff69b4, 1.5, 35);
@@ -739,7 +739,7 @@ export default function OnePiece() {
         const cageGeo = new THREE.IcosahedronGeometry(14, 1);
         const cageMat = new THREE.MeshStandardMaterial({
           color: 0x9370db, wireframe: true, transparent: true, opacity: 0.2,
-          emissive: 0x9370db, emissiveIntensity: 0.15,
+          emissive: 0x9370db, emissiveIntensity: 0.1,
         });
         const cage = new THREE.Mesh(cageGeo, cageMat);
         cage.position.set(0, 2, -5);
@@ -782,9 +782,9 @@ export default function OnePiece() {
 
       const buildWano = () => {
         scene.background = new THREE.Color(0x000000);
-        scene.fog = new THREE.FogExp2(0x0a0000, 0.015);
+        scene.fog = new THREE.FogExp2(0x000000, 0.018);
 
-        addArcObject(new THREE.AmbientLight(0x2f4f4f, 0.5));
+        addArcObject(new THREE.AmbientLight(0x2f4f4f, 0.6));
         const bloodDir = new THREE.DirectionalLight(0xdc143c, 1.2);
         bloodDir.position.set(5, 10, 5);
         addArcObject(bloodDir);
@@ -802,7 +802,7 @@ export default function OnePiece() {
           const tierMat = new THREE.MeshStandardMaterial({
             color: i % 2 === 0 ? 0xdc143c : 0xf5f5dc, roughness: 0.6,
             emissive: i % 2 === 0 ? 0xdc143c : 0x000000,
-            emissiveIntensity: i % 2 === 0 ? 0.15 : 0,
+            emissiveIntensity: i % 2 === 0 ? 0.1 : 0,
           });
           const tier = new THREE.Mesh(tierGeo, tierMat);
           tier.position.y = i * 1.6;

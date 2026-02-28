@@ -159,6 +159,8 @@ export default function OnePiece() {
 
       initializedRef.current = true;
 
+      gsap.ticker.lagSmoothing(0);
+
       const isMobile = window.innerWidth < 768;
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const pc = (count: number) => isMobile ? Math.ceil(count * 0.25) : count;
@@ -957,6 +959,20 @@ export default function OnePiece() {
         gsap.to(titleContainer, { y: -30, opacity: 0, duration: 0.4, ease: "power2.in" });
       };
 
+      const preloadArcText = (index: number) => {
+        const arc = ARCS[index];
+        const titleEl = titleRef.current;
+        const tagEl = taglineRef.current;
+        gsap.killTweensOf([titleEl, tagEl]);
+        if (titleEl) {
+          titleEl.textContent = arc.title;
+          titleEl.style.color = arc.color;
+          titleEl.style.textShadow = `0 0 20px ${arc.color}, 0 0 50px ${arc.color}88`;
+        }
+        if (tagEl) tagEl.textContent = arc.tagline;
+        gsap.set([titleEl, tagEl], { opacity: 0, y: 35, scale: 0.95 });
+      };
+
       const updateUI = (index: number) => {
         const arc = ARCS[index];
         const titleEl = titleRef.current;
@@ -964,7 +980,6 @@ export default function OnePiece() {
         const promptEl = promptRef.current;
         const dotsEl = dotsRef.current;
         const titleContainer = titleContainerRef.current;
-        const scanLine = document.getElementById("scan-line-react");
 
         if (bloomPass) {
           gsap.to(bloomPass, {
@@ -994,29 +1009,28 @@ export default function OnePiece() {
           gsap.fromTo(dots[index], { scale: 1 }, { scale: 1.6, duration: 0.3, ease: "elastic.out(1, 0.4)", yoyo: true, repeat: 1 });
         }
 
+        gsap.killTweensOf([titleEl, tagEl]);
+
         if (titleEl) {
           titleEl.textContent = arc.title;
           titleEl.style.color = arc.color;
-          titleEl.style.textShadow = `0 0 20px ${hexToRgba(arc.color, 0.6)}, 0 0 40px ${hexToRgba(arc.color, 0.3)}, 0 0 80px ${hexToRgba(arc.color, 0.15)}`;
+          titleEl.style.textShadow = `0 0 20px ${arc.color}, 0 0 50px ${arc.color}88`;
         }
         if (tagEl) tagEl.textContent = arc.tagline;
         if (promptEl) promptEl.textContent = arc.prompt;
 
         gsap.set(titleContainer, { opacity: 1, y: 0 });
-        gsap.fromTo(titleEl,
-          { opacity: 0, scale: 1.4, y: 30 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.9, ease: "back.out(1.7)" }
-        );
-        gsap.fromTo(tagEl,
-          { opacity: 0, letterSpacing: "0.4em" },
-          { opacity: 1, letterSpacing: "0.1em", duration: 1.1, ease: "power2.out", delay: 0.2 }
-        );
-        if (scanLine) {
-          gsap.fromTo(scanLine,
-            { x: "-100%", opacity: 1 },
-            { x: "100%", opacity: 0, duration: 0.8, ease: "power2.inOut" }
-          );
-        }
+        gsap.set([titleEl, tagEl], { opacity: 0, y: 35, scale: 0.95 });
+
+        const tl = gsap.timeline();
+        tl.to(titleEl, {
+          opacity: 1, y: 0, scale: 1,
+          duration: 0.65, ease: 'power3.out'
+        })
+        .to(tagEl, {
+          opacity: 1, y: 0, scale: 1,
+          duration: 0.55, ease: 'power2.out'
+        }, '-=0.45');
       };
 
       // ══════════════════════════════════════════════════════════════════════
@@ -1123,8 +1137,10 @@ export default function OnePiece() {
       const navigateForward = () => {
         if (isTransitioning) return;
         isTransitioning = true;
+        fadeOutUI();
 
         if (showingCredits) {
+          preloadArcText(0);
           if (prefersReducedMotion) {
             clearScene();
             loadArcScene(0);
@@ -1184,6 +1200,7 @@ export default function OnePiece() {
         }
 
         const nextIndex = currentArcIndex + 1;
+        preloadArcText(nextIndex);
         if (prefersReducedMotion) {
           loadArcScene(nextIndex);
           camera.position.z = 20;
@@ -1212,6 +1229,8 @@ export default function OnePiece() {
         if (isTransitioning) return;
         if (showingCredits) {
           isTransitioning = true;
+          fadeOutUI();
+          preloadArcText(7);
           if (prefersReducedMotion) {
             clearScene();
             loadArcScene(7);
@@ -1244,7 +1263,9 @@ export default function OnePiece() {
         }
         if (currentArcIndex <= 0) return;
         isTransitioning = true;
+        fadeOutUI();
         const prevIndex = currentArcIndex - 1;
+        preloadArcText(prevIndex);
         if (prefersReducedMotion) {
           loadArcScene(prevIndex);
           camera.position.z = 20;
@@ -1333,9 +1354,7 @@ export default function OnePiece() {
 
       const camTilt = { value: 0 };
 
-      let animFrameId: number;
-      const animate = () => {
-        animFrameId = requestAnimationFrame(animate);
+      const tickerFn = () => {
         const t = clock.getElapsedTime();
 
         stars.rotation.y += 0.0001;
@@ -1374,10 +1393,12 @@ export default function OnePiece() {
       };
 
       loadArcScene(0);
-      animate();
+
+      gsap.ticker.fps(60);
+      gsap.ticker.add(tickerFn);
 
       (mountRef.current as any).__cleanup = () => {
-        cancelAnimationFrame(animFrameId);
+        gsap.ticker.remove(tickerFn);
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("resize", onResize);
         window.removeEventListener("keydown", onKeyDown);
@@ -1492,6 +1513,10 @@ export default function OnePiece() {
             lineHeight: 1.1,
             textShadow: `0 0 20px ${hexToRgba(ARCS[0].color, 0.6)}, 0 0 40px ${hexToRgba(ARCS[0].color, 0.3)}, 0 0 80px ${hexToRgba(ARCS[0].color, 0.15)}`,
             letterSpacing: "0.04em",
+            willChange: "transform, opacity",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitFontSmoothing: "antialiased",
           }}
         >
           {ARCS[0].title}
@@ -1507,6 +1532,10 @@ export default function OnePiece() {
             letterSpacing: "0.08em",
             textShadow: "0 0 12px rgba(172,214,245,0.3)",
             lineHeight: 1.6,
+            willChange: "transform, opacity",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitFontSmoothing: "antialiased",
           }}
         >
           {ARCS[0].tagline}
@@ -1651,10 +1680,18 @@ export default function OnePiece() {
             letterSpacing: "0.1em",
             animation: "pulse-prompt 1.5s ease-in-out infinite",
             display: "inline-block",
+            willChange: "transform, opacity",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitFontSmoothing: "antialiased",
           }}
         >
           {ARCS[0].prompt}
         </span>
+      </div>
+
+      <div style={{ position: "absolute", visibility: "hidden", pointerEvents: "none", fontFamily: "'Pirata One', cursive", fontSize: "1px" }}>
+        EAST BLUE ALABASTA SKYPIEA WATER 7 MARINEFORD DRESSROSA WANO
       </div>
 
       <style>{`
@@ -1662,7 +1699,13 @@ export default function OnePiece() {
           0%, 100% { opacity: 1.0; }
           50% { opacity: 0.4; }
         }
-        [data-dot] { position: relative; }
+        [data-dot] {
+          position: relative;
+          will-change: transform, opacity;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-font-smoothing: antialiased;
+        }
         [data-dot].ripple::after {
           content: '';
           position: absolute;

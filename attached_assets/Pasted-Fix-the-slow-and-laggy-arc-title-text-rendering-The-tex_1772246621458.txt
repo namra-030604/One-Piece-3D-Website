@@ -1,0 +1,86 @@
+Fix the slow and laggy arc title/text rendering. The text takes too 
+long to arrange itself after arc transitions. Apply all these fixes:
+
+1. GPU ACCELERATE all text elements — add to CSS for #arc-title, 
+   #arc-tagline, #click-prompt, .dot:
+   will-change: transform, opacity;
+   transform: translateZ(0);
+   backface-visibility: hidden;
+   -webkit-font-smoothing: antialiased;
+
+2. REMOVE any CSS transition properties on #arc-title and #arc-tagline 
+   — these conflict with GSAP and cause jank. Let GSAP control 
+   all animation exclusively. [web:109]
+
+3. REPLACE the current text transition with a GSAP Timeline so 
+   everything is perfectly sequenced with zero gaps:
+
+   const tl = gsap.timeline();
+   
+   // Step 1: Instantly kill any running tweens on text elements
+   gsap.killTweensOf([titleEl, taglineEl]);
+   
+   // Step 2: Set new content BEFORE animating (no delay)
+   titleEl.textContent = arc.title;
+   taglineEl.textContent = arc.tagline;
+   titleEl.style.color = arc.color;
+   titleEl.style.textShadow = 
+     `0 0 20px ${arc.color}, 0 0 50px ${arc.color}88`;
+   
+   // Step 3: Set start state immediately
+   gsap.set([titleEl, taglineEl], { 
+     opacity: 0, y: 35, scale: 0.95 
+   });
+   
+   // Step 4: Animate in — title first, tagline 0.12s after
+   tl.to(titleEl, { 
+     opacity: 1, y: 0, scale: 1, 
+     duration: 0.65, ease: 'power3.out' 
+   })
+   .to(taglineEl, { 
+     opacity: 1, y: 0, scale: 1,
+     duration: 0.55, ease: 'power2.out' 
+   }, '-=0.45');
+
+4. PRELOAD next arc text content — before the zoom tween starts, 
+   pre-set the title and tagline to opacity:0 with the new content 
+   already in place so the browser pre-renders the font glyphs. 
+   This eliminates the font layout delay on first render of each arc name.
+
+5. GSAP TICKER optimization — add at the top of your script:
+   gsap.ticker.lagSmoothing(0);
+   This tells GSAP to never try to "catch up" after a lag spike, 
+   keeping animations buttery smooth at all times. [web:105]
+
+6. PRE-RENDER FONTS — add this to the CSS so all Pirata One and 
+   Cinzel font weights are loaded upfront before any arc loads:
+   
+   .font-preload {
+     position: absolute;
+     visibility: hidden;
+     pointer-events: none;
+     font-family: 'Pirata One', cursive;
+     font-size: 1px;
+   }
+   
+   And add this hidden div to the HTML body:
+   <div class="font-preload">
+     EAST BLUE ALABASTA SKYPIEA WATER 7 MARINEFORD DRESSROSA WANO
+   </div>
+   
+   This forces the browser to download and cache all font glyphs 
+   on page load so no arc title ever causes a font layout flash.
+
+7. THREE.JS RENDER LOOP — move composer.render() to use 
+   gsap.ticker.add() instead of requestAnimationFrame so Three.js 
+   and GSAP share the same frame loop with zero conflicts:
+   
+   gsap.ticker.add(() => {
+     const t = clock.getElapsedTime();
+     // all your animate logic here
+     composer.render();
+   });
+   gsap.ticker.fps(60);
+   Remove the old requestAnimationFrame animate() call entirely.
+
+Do not change any colors, bloom, fog, geometry, or scene content.

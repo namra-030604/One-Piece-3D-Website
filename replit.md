@@ -37,8 +37,12 @@ Preferred communication style: Simple, everyday language.
 - **`arcAnimateFn`**: Per-arc callback for per-frame animation (ocean waves, particle drift, cage rotation, etc.)
 - **Animation Upgrades**:
   - **Text sync**: `loadArcScene()` + text update + GSAP title entrance all fire in the same `onComplete` callback (no separate setTimeout or fade-out-then-fade-in)
-  - **Zoom transition**: Canvas blur(4px) at start, camera rotation.x tilt (0→0.12→0 via `camTilt` object), white flash div (`#flash-overlay`) opacity 0→0.5→0 at midpoint, blur removed in `endZoomEffects()`
-  - **Title entrance**: Elastic scale 1.4→1 + y 30→0 with `back.out(1.7)`, tagline letter-spacing 0.4em→0.1em, gold scan line div sweeps x:-100%→100%
+  - **Curtain transition**: Dark navy `#curtain` div slides up from bottom (0.6s easeInExpo), scene swaps behind it, curtain exits upward (easeOutExpo). Replaces the old zoom/blur/flash effects.
+  - **Title entrance (Anime.js)**: Spring physics `spring(1,80,10,0)` for title scale/opacity, tagline split into `.letter` spans with stagger animation `anime.stagger(40)`, gold shimmer sweep via CSS `background-clip: text` + `shimmer-sweep` keyframe
+  - **Custom cursor**: Gold circle `#custom-cursor` tracks mouse via anime.js, scales 2x on click. `body { cursor: none }` hides default cursor on desktop.
+  - **God-rays (Skypiea)**: 5 diagonal `BoxGeometry` beams (`#F0E68C`, opacity 0.08, rotating 0.0005/frame)
+  - **Screen shake (Marineford)**: Camera shake on entrance via `anime({ targets: camera.position, x: [0,0.5,-0.5,0.3,0] })`
+  - **Shader ocean**: Grand Line and East Blue use custom `ShaderMaterial` with wave vertex shader (navy→teal color via `vDisp`); `uTime` uniform updated each frame
   - **Idle camera**: Orbit via `Math.sin(t*0.08)*3` on X, breathing via `baseCamY + Math.sin(t*0.15)*0.8` on Y, mouse parallax adds on top
   - **Object animations**: All Mesh/Group objects get scale pulse `1 + Math.sin(t*1.2)*0.025`, all Points get per-particle X wobble `+= Math.sin(t+i*0.1)*0.003`
   - **Progress dots**: GSAP elastic bounce `scale 1→1.6→1` with `elastic.out(1, 0.4)`, CSS `.ripple::after` pseudo-element with `dot-ripple` keyframe animation
@@ -80,7 +84,9 @@ Preferred communication style: Simple, everyday language.
 ### CDN Libraries (Runtime-loaded, not npm)
 - **Three.js r128** — `cdnjs.cloudflare.com` — Core 3D WebGL rendering
 - **Three.js post-processing** — `cdn.jsdelivr.net` — EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, FilmPass
-- **GSAP** — loaded from CDN — Camera animation and cinematic transitions
+- **GSAP 3.12** — loaded from CDN — Camera animation and cinematic transitions
+- **Anime.js v4** — `cdn.jsdelivr.net` — Spring physics UI animations (title entrance, tagline letter stagger, dot bounce, custom cursor tracking)
+- **Barba.js** — `cdn.jsdelivr.net` — Page transition framework (initialized with `prevent: () => true` for SPA namespace management)
 
 ### npm Packages (Key ones)
 - `drizzle-orm` + `drizzle-zod` — ORM and schema validation

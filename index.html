@@ -165,6 +165,36 @@
       100% { width: 30px; height: 30px; opacity: 0; }
     }
 
+    #curtain {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #050a1a;
+      z-index: 998;
+      pointer-events: none;
+      transform: translateY(100%);
+    }
+
+    #custom-cursor {
+      position: fixed;
+      width: 12px; height: 12px;
+      border: 2px solid #FFCD00;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      top: -50px; left: -50px;
+    }
+
+    body { cursor: none; }
+    a, [data-credits-link] { cursor: pointer; }
+
+    .letter { display: inline-block; }
+
+    @keyframes shimmer-sweep {
+      0% { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+
     @keyframes pulse-prompt {
       0%, 100% { opacity: 1.0; }
       50% { opacity: 0.4; }
@@ -179,8 +209,9 @@
     }
   </style>
 </head>
-<body>
+<body data-barba="wrapper">
 
+  <div data-barba="container" data-barba-namespace="arc-0" id="barba-container">
   <div id="canvas-mount" data-testid="threejs-canvas-mount"></div>
   <div id="vignette" data-testid="vignette-overlay"></div>
   <div id="flash-overlay" data-testid="flash-overlay"></div>
@@ -204,6 +235,10 @@
   <div id="click-prompt-container" data-testid="click-prompt">
     <span id="click-prompt">Click anywhere to set sail</span>
   </div>
+  </div>
+
+  <div id="curtain" data-testid="curtain"></div>
+  <div id="custom-cursor" data-testid="custom-cursor"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
@@ -215,6 +250,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/FilmPass.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4/lib/anime.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@barba/core/dist/barba.umd.js"></script>
 
   <script>
     (function () {
@@ -261,6 +298,20 @@
 
       var THREE = window.THREE;
       var gsap = window.gsap;
+      var anime = window.anime;
+      var curtainEl = document.getElementById("curtain");
+      var cursorEl = document.getElementById("custom-cursor");
+      var barbaContainerEl = document.getElementById("barba-container");
+
+      function splitTextToLetters(el, text) {
+        el.innerHTML = '';
+        for (var i = 0; i < text.length; i++) {
+          var span = document.createElement('span');
+          span.className = 'letter';
+          span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
+          el.appendChild(span);
+        }
+      }
 
       var isMobile = window.innerWidth < 768;
       var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -357,18 +408,35 @@
         scene.fog = null;
 
         var oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSegHigh, oceanSegHigh);
-        var oceanMat = new THREE.MeshPhongMaterial({
-          color: 0x1a4a8a, shininess: 60, specular: 0x4488cc,
-          side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.9
+        var oceanMat = new THREE.ShaderMaterial({
+          uniforms: { uTime: { value: 0.0 } },
+          vertexShader: [
+            'uniform float uTime;',
+            'varying float vDisp;',
+            'void main() {',
+            '  vec3 p = position;',
+            '  float d = sin(p.x * 0.3 + uTime) * 1.2 + cos(p.y * 0.3 + uTime * 0.8) * 0.8;',
+            '  p.z += d;',
+            '  vDisp = d;',
+            '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+            '}'
+          ].join('\n'),
+          fragmentShader: [
+            'varying float vDisp;',
+            'void main() {',
+            '  float t = clamp((vDisp + 2.0) / 4.0, 0.0, 1.0);',
+            '  vec3 deep = vec3(0.102, 0.290, 0.541);',
+            '  vec3 crest = vec3(0.125, 0.698, 0.667);',
+            '  gl_FragColor = vec4(mix(deep, crest, t), 0.9);',
+            '}'
+          ].join('\n'),
+          transparent: true,
+          side: THREE.DoubleSide
         });
         var ocean = new THREE.Mesh(oceanGeo, oceanMat);
         ocean.rotation.x = -Math.PI / 2;
         ocean.position.y = -8;
         addArcObject(ocean);
-
-        var posAttr = ocean.geometry.attributes.position;
-        var origZ = [];
-        for (var i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
 
         var torusGeo = new THREE.TorusGeometry(3, 0.3, 16, 100);
         var torusMat = new THREE.MeshStandardMaterial({
@@ -388,13 +456,7 @@
         addArcObject(pt);
 
         arcAnimateFn = function (t) {
-          for (var i = 0; i < posAttr.count; i++) {
-            var x = posAttr.getX(i);
-            var y = posAttr.getY(i);
-            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.3 + t) * 1.2 + Math.cos(y * 0.3 + t * 0.8) * 0.8);
-          }
-          posAttr.needsUpdate = true;
-          ocean.geometry.computeVertexNormals();
+          oceanMat.uniforms.uTime.value = t;
           torus.rotation.y += 0.003;
           torus.rotation.x += 0.001;
           torus.position.y = 2 + Math.sin(t * 0.8) * 0.4;
@@ -414,17 +476,35 @@
         addArcObject(warmPt);
 
         var oceanGeo = new THREE.PlaneGeometry(200, 200, oceanSeg, oceanSeg);
-        var oceanMat = new THREE.MeshPhongMaterial({
-          color: 0x20b2aa, shininess: 80, specular: 0x87ceeb,
-          side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.85
+        var oceanMat = new THREE.ShaderMaterial({
+          uniforms: { uTime: { value: 0.0 } },
+          vertexShader: [
+            'uniform float uTime;',
+            'varying float vDisp;',
+            'void main() {',
+            '  vec3 p = position;',
+            '  float d = sin(p.x * 0.2 + uTime * 0.7) * 0.3 + cos(p.y * 0.25 + uTime * 0.5) * 0.2;',
+            '  p.z += d;',
+            '  vDisp = d;',
+            '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+            '}'
+          ].join('\n'),
+          fragmentShader: [
+            'varying float vDisp;',
+            'void main() {',
+            '  float t = clamp((vDisp + 0.5) / 1.0, 0.0, 1.0);',
+            '  vec3 deep = vec3(0.102, 0.290, 0.541);',
+            '  vec3 crest = vec3(0.125, 0.698, 0.667);',
+            '  gl_FragColor = vec4(mix(deep, crest, t), 0.85);',
+            '}'
+          ].join('\n'),
+          transparent: true,
+          side: THREE.DoubleSide
         });
         var ocean = new THREE.Mesh(oceanGeo, oceanMat);
         ocean.rotation.x = -Math.PI / 2;
         ocean.position.y = -8;
         addArcObject(ocean);
-        var posAttr = ocean.geometry.attributes.position;
-        var origZ = [];
-        for (var i = 0; i < posAttr.count; i++) origZ.push(posAttr.getZ(i));
 
         var islandGeo = new THREE.CylinderGeometry(3, 4, 2, 16);
         var islandMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
@@ -467,13 +547,7 @@
         addArcObject(foam);
 
         arcAnimateFn = function (t) {
-          for (var i = 0; i < posAttr.count; i++) {
-            var x = posAttr.getX(i);
-            var y = posAttr.getY(i);
-            posAttr.setZ(i, origZ[i] + Math.sin(x * 0.2 + t * 0.7) * 0.3 + Math.cos(y * 0.25 + t * 0.5) * 0.2);
-          }
-          posAttr.needsUpdate = true;
-          ocean.geometry.computeVertexNormals();
+          oceanMat.uniforms.uTime.value = t;
           tree1.rotation.z = Math.sin(t * 1.5) * 0.03;
           tree2.rotation.z = Math.sin(t * 1.3 + 1) * 0.025;
           var fp = foam.geometry.attributes.position;
@@ -611,6 +685,20 @@
         var motes = new THREE.Points(moteGeo, moteMat);
         addArcObject(motes);
 
+        var godRays = [];
+        for (var gr = 0; gr < 5; gr++) {
+          var rayGeo = new THREE.BoxGeometry(0.3, 30, 0.1);
+          var rayMat = new THREE.MeshBasicMaterial({
+            color: 0xF0E68C, transparent: true, opacity: 0.08
+          });
+          var ray = new THREE.Mesh(rayGeo, rayMat);
+          ray.position.set(-8 + gr * 4, 10, -5 + gr * 2);
+          ray.rotation.z = Math.PI / 6;
+          ray.rotation.x = Math.PI / 8;
+          addArcObject(ray);
+          godRays.push(ray);
+        }
+
         arcAnimateFn = function (t) {
           for (var c = 0; c < cloudPositions.length; c++) {
             cloudPositions[c].obj.position.y = cloudPositions[c].baseY + Math.sin(t * 0.3 + cloudPositions[c].baseY) * 0.5;
@@ -623,6 +711,9 @@
             if (mp.getY(i) > 20) mp.setY(i, -10);
           }
           mp.needsUpdate = true;
+          for (var gr = 0; gr < godRays.length; gr++) {
+            godRays[gr].rotation.y += 0.0005;
+          }
         };
       }
 
@@ -800,6 +891,15 @@
           }
           sp.needsUpdate = true;
         };
+
+        if (anime) {
+          anime({
+            targets: camera.position,
+            x: [0, 0.5, -0.5, 0.3, 0],
+            duration: 400,
+            easing: 'easeInOutSine'
+          });
+        }
       }
 
       function buildDressrosa() {
@@ -1041,27 +1141,45 @@
         }
         void dots[index].offsetWidth;
         dots[index].classList.add("ripple");
-        gsap.fromTo(dots[index], { scale: 1 }, { scale: 1.6, duration: 0.3, ease: "elastic.out(1, 0.4)", yoyo: true, repeat: 1 });
+        if (anime) {
+          anime({ targets: dots[index], scale: [1, 1.8, 1], easing: 'spring(1, 60, 8, 0)', duration: 600 });
+        }
 
         titleEl.textContent = arc.title;
         titleEl.style.color = arc.color;
         titleEl.style.textShadow = "0 0 20px " + hexToRgba(arc.color, 0.6) + ", 0 0 40px " + hexToRgba(arc.color, 0.3) + ", 0 0 80px " + hexToRgba(arc.color, 0.15);
-        taglineEl.textContent = arc.tagline;
+        splitTextToLetters(taglineEl, arc.tagline);
         promptEl.textContent = arc.prompt;
 
         gsap.set(titleContainerEl, { opacity: 1, y: 0 });
-        gsap.fromTo(titleEl,
-          { opacity: 0, scale: 1.4, y: 30 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.9, ease: "back.out(1.7)" }
-        );
-        gsap.fromTo(taglineEl,
-          { opacity: 0, letterSpacing: "0.4em" },
-          { opacity: 1, letterSpacing: "0.1em", duration: 1.1, ease: "power2.out", delay: 0.2 }
-        );
-        gsap.fromTo(scanLineEl,
-          { x: "-100%", opacity: 1 },
-          { x: "100%", opacity: 0, duration: 0.8, ease: "power2.inOut" }
-        );
+
+        if (anime) {
+          anime({ targets: titleEl, translateY: [40, 0], opacity: [0, 1], scale: [1.3, 1], easing: 'spring(1, 80, 10, 0)', duration: 900 });
+          anime({ targets: taglineEl.querySelectorAll('.letter'), translateY: [20, 0], opacity: [0, 1], delay: anime.stagger(40), easing: 'spring(1, 70, 12, 0)' });
+          anime({ targets: scanLineEl, translateX: ['-100%', '100%'], opacity: [1, 0], duration: 800, easing: 'easeInOutQuad' });
+        } else {
+          gsap.fromTo(titleEl,
+            { opacity: 0, scale: 1.4, y: 30 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.9, ease: "back.out(1.7)" }
+          );
+          gsap.fromTo(taglineEl,
+            { opacity: 0 },
+            { opacity: 1, duration: 1.1, ease: "power2.out", delay: 0.2 }
+          );
+          gsap.fromTo(scanLineEl,
+            { x: "-100%", opacity: 1 },
+            { x: "100%", opacity: 0, duration: 0.8, ease: "power2.inOut" }
+          );
+        }
+
+        titleEl.style.backgroundImage = 'linear-gradient(90deg, ' + arc.color + ' 0%, ' + arc.color + ' 40%, #FFCD00 50%, ' + arc.color + ' 60%, ' + arc.color + ' 100%)';
+        titleEl.style.backgroundSize = '200% 100%';
+        titleEl.style.webkitBackgroundClip = 'text';
+        titleEl.style.backgroundClip = 'text';
+        titleEl.style.webkitTextFillColor = 'transparent';
+        titleEl.style.animation = 'shimmer-sweep 3s ease-in-out 1s infinite';
+
+        if (barbaContainerEl) barbaContainerEl.setAttribute('data-barba-namespace', 'arc-' + index);
       }
 
       function showCreditsUI() {
@@ -1108,24 +1226,43 @@
         gsap.to(promptContainerEl, { opacity: 1, duration: 0.5 });
       }
 
-      function startZoomEffects() {
-        fadeOutUI();
-        renderer.domElement.style.transition = "filter 0.3s ease";
-        renderer.domElement.style.filter = "blur(4px)";
-        gsap.to(camTilt, { value: 0.12, duration: 0.7, ease: "power2.inOut" });
-        gsap.to(camTilt, { value: 0, duration: 0.7, delay: 0.7, ease: "power2.inOut" });
-        gsap.to(flashEl, { opacity: 0.5, duration: 0.2, delay: 0.5 });
-        gsap.to(flashEl, { opacity: 0, duration: 0.2, delay: 0.7 });
-      }
-
-      function endZoomEffects() {
-        renderer.domElement.style.filter = "blur(0px)";
-        camTilt.value = 0;
+      function curtainTransition(swapFn) {
+        if (anime) {
+          anime({
+            targets: curtainEl,
+            translateY: ['100%', '0%'],
+            easing: 'easeInExpo',
+            duration: 600,
+            complete: function () {
+              swapFn();
+              anime({
+                targets: curtainEl,
+                translateY: ['0%', '-100%'],
+                easing: 'easeOutExpo',
+                duration: 600,
+                complete: function () {
+                  curtainEl.style.transform = 'translateY(100%)';
+                  isTransitioning = false;
+                }
+              });
+            }
+          });
+        } else {
+          fadeOutUI();
+          gsap.to(camera.position, {
+            z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
+            onComplete: function () {
+              swapFn();
+              isTransitioning = false;
+            }
+          });
+        }
       }
 
       function navigateForward() {
         if (isTransitioning) return;
         isTransitioning = true;
+        fadeOutUI();
 
         if (showingCredits) {
           if (prefersReducedMotion) {
@@ -1133,15 +1270,10 @@
             currentArcIndex = 0; showingCredits = false;
             hideCreditsUI(); updateUI(0); isTransitioning = false;
           } else {
-            startZoomEffects();
-            gsap.to(camera.position, {
-              z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
-              onComplete: function () {
-                endZoomEffects();
-                clearScene(); loadArcScene(0); camera.position.z = 20;
-                currentArcIndex = 0; showingCredits = false;
-                hideCreditsUI(); updateUI(0); isTransitioning = false;
-              }
+            curtainTransition(function () {
+              clearScene(); loadArcScene(0); camera.position.z = 20;
+              currentArcIndex = 0; showingCredits = false;
+              hideCreditsUI(); updateUI(0);
             });
           }
           return;
@@ -1152,14 +1284,9 @@
             clearScene(); buildCreditsScene();
             showingCredits = true; showCreditsUI(); isTransitioning = false;
           } else {
-            startZoomEffects();
-            gsap.to(camera.position, {
-              z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
-              onComplete: function () {
-                endZoomEffects();
-                clearScene(); buildCreditsScene(); camera.position.z = 20;
-                showingCredits = true; showCreditsUI(); isTransitioning = false;
-              }
+            curtainTransition(function () {
+              clearScene(); buildCreditsScene(); camera.position.z = 20;
+              showingCredits = true; showCreditsUI();
             });
           }
           return;
@@ -1170,14 +1297,9 @@
           loadArcScene(nextIndex); camera.position.z = 20;
           currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
         } else {
-          startZoomEffects();
-          gsap.to(camera.position, {
-            z: camera.position.z - 30, duration: 1.4, ease: "power3.inOut",
-            onComplete: function () {
-              endZoomEffects();
-              loadArcScene(nextIndex); camera.position.z = 20;
-              currentArcIndex = nextIndex; updateUI(nextIndex); isTransitioning = false;
-            }
+          curtainTransition(function () {
+            loadArcScene(nextIndex); camera.position.z = 20;
+            currentArcIndex = nextIndex; updateUI(nextIndex);
           });
         }
       }
@@ -1186,39 +1308,31 @@
         if (isTransitioning) return;
         if (showingCredits) {
           isTransitioning = true;
+          fadeOutUI();
           if (prefersReducedMotion) {
             clearScene(); loadArcScene(7); camera.position.z = 20;
             showingCredits = false; hideCreditsUI(); updateUI(7);
             currentArcIndex = 7; isTransitioning = false;
           } else {
-            startZoomEffects();
-            gsap.to(camera.position, {
-              z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
-              onComplete: function () {
-                endZoomEffects();
-                clearScene(); loadArcScene(7); camera.position.z = 20;
-                showingCredits = false; hideCreditsUI(); updateUI(7);
-                currentArcIndex = 7; isTransitioning = false;
-              }
+            curtainTransition(function () {
+              clearScene(); loadArcScene(7); camera.position.z = 20;
+              showingCredits = false; hideCreditsUI(); updateUI(7);
+              currentArcIndex = 7;
             });
           }
           return;
         }
         if (currentArcIndex <= 0) return;
         isTransitioning = true;
+        fadeOutUI();
         var prevIndex = currentArcIndex - 1;
         if (prefersReducedMotion) {
           loadArcScene(prevIndex); camera.position.z = 20;
           currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
         } else {
-          startZoomEffects();
-          gsap.to(camera.position, {
-            z: camera.position.z + 30, duration: 1.4, ease: "power3.inOut",
-            onComplete: function () {
-              endZoomEffects();
-              loadArcScene(prevIndex); camera.position.z = 20;
-              currentArcIndex = prevIndex; updateUI(prevIndex); isTransitioning = false;
-            }
+          curtainTransition(function () {
+            loadArcScene(prevIndex); camera.position.z = 20;
+            currentArcIndex = prevIndex; updateUI(prevIndex);
           });
         }
       }
@@ -1257,7 +1371,24 @@
         var vx = 50 + targetX * 10;
         var vy = 50 - targetY * 10;
         vignetteEl.style.background = "radial-gradient(ellipse at " + vx + "% " + vy + "%, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%)";
+        if (anime && cursorEl) {
+          anime({
+            targets: cursorEl,
+            left: e.clientX + 'px',
+            top: e.clientY + 'px',
+            duration: 150,
+            easing: 'easeOutQuad'
+          });
+        }
       });
+
+      if (!isMobile) {
+        window.addEventListener("click", function () {
+          if (anime && cursorEl) {
+            anime({ targets: cursorEl, scale: [1, 2, 1], duration: 300, easing: 'easeInOutSine' });
+          }
+        });
+      }
 
       window.addEventListener("resize", function () {
         var w = window.innerWidth;
@@ -1310,9 +1441,19 @@
       loadArcScene(0);
       animate();
 
+      if (window.barba) {
+        try {
+          barba.init({
+            prevent: function () { return true; }
+          });
+        } catch (e) {
+          console.warn("[OnePiece] Barba.js init skipped:", e);
+        }
+      }
+
       window.__threejsState = {
         scene: scene, camera: camera, renderer: renderer, composer: composer,
-        clock: clock, THREE: THREE, gsap: gsap, stars: stars, bloomPass: bloomPass,
+        clock: clock, THREE: THREE, gsap: gsap, anime: anime, stars: stars, bloomPass: bloomPass,
         getCurrentArc: function () { return currentArcIndex; },
         isCredits: function () { return showingCredits; },
         loadArcScene: loadArcScene, updateUI: updateUI, clearScene: clearScene,

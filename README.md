@@ -27,7 +27,9 @@ After the final arc, a credits screen appears. Click again to loop back to the b
 
 ## Tech Stack
 
-- **Three.js r128** — 3D WebGL rendering (CDN)
-- **GSAP 3.12** — Camera animations and UI transitions (CDN)
+- **Three.js r128** — 3D WebGL rendering with custom shader oceans (CDN)
+- **GSAP 3.12** — Camera animations and cinematic transitions (CDN)
+- **Anime.js v4** — Spring physics UI animations and custom cursor (CDN)
+- **Barba.js** — Page transition framework (CDN)
 - **UnrealBloomPass + FilmPass** — Post-processing effects (CDN)
 - **Google Fonts** — Pirata One + Cinzel (CDN)

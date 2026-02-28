@@ -1,0 +1,63 @@
+Upgrade the website with these 3 libraries. Add their CDN links 
+in the <head> alongside existing Three.js and GSAP:
+
+CDN 1 - Anime.js v4:
+https://cdn.jsdelivr.net/npm/animejs@4/lib/anime.iife.min.js
+
+CDN 2 - Barba.js:
+https://cdn.jsdelivr.net/npm/@barba/core/dist/barba.umd.js
+
+Now apply these upgrades:
+
+── ANIME.JS UPGRADES ──
+1. Replace all GSAP title entrance animations with Anime.js spring physics:
+   anime({ targets: '#arc-title', translateY: [40, 0], opacity: [0, 1],
+   scale: [1.3, 1], easing: 'spring(1, 80, 10, 0)', duration: 900 })
+
+2. Arc tagline entrance with stagger letter animation:
+   Split tagline text into individual <span> letters, then:
+   anime({ targets: '.letter', translateY: [20, 0], opacity: [0, 1],
+   delay: anime.stagger(40), easing: 'spring(1, 70, 12, 0)' })
+
+3. Progress dots on activation:
+   anime({ targets: activeDot, scale: [1, 1.8, 1], 
+   easing: 'spring(1, 60, 8, 0)', duration: 600 })
+
+── BARBA.JS UPGRADES ──
+4. Wrap each arc section in a barba container:
+   <div data-barba="container" data-barba-namespace="arc-X">
+   
+5. Add a leave transition between arcs:
+   - A dark navy curtain div slides in from bottom (y: 100%→0%) 
+     covering the screen over 0.6s
+   - Scene swaps behind the curtain
+   - Curtain slides out upward (y: 0%→-100%) revealing new scene
+   - Use Anime.js to drive the curtain: 
+     anime({ targets: '.curtain', translateY: ['100%', '0%'], 
+     easing: 'easeInExpo', duration: 600 })
+
+── THREE.JS SHADER UPGRADES ──
+6. Add a custom ShaderMaterial for the ocean water in Grand Line 
+   and East Blue scenes — use a simple wave vertex shader with 
+   varying color from deep navy #1a4a8a at troughs to teal #20B2AA 
+   at crests based on vertex Z displacement value
+
+7. Add a god-ray / light shaft effect in Skypiea:
+   Create 5 thin BoxGeometry beams with MeshBasicMaterial color 
+   #F0E68C, opacity 0.08, positioned diagonally from top, 
+   rotating very slowly (0.0005 per frame), transparent: true
+
+8. Marineford - add screen shake on arc entrance:
+   When Marineford scene loads, do 3 quick camera position shakes:
+   anime({ targets: camera.position, x: [0, 0.5, -0.5, 0.3, 0],
+   duration: 400, easing: 'easeInOutSine' })
+
+── GENERAL POLISH ──
+9. Add a custom cursor: replace default cursor with a gold circle 
+   (12px, border: 2px solid #FFCD00) that follows the mouse with 
+   slight lag using anime.js. On click it scales up to 2x then back.
+
+10. Arc title text — add a gold shimmer sweep effect:
+    After title appears, animate a linear-gradient from transparent 
+    to gold to transparent sweeping left to right across the text 
+    using CSS background-clip: text animation, every 3 seconds.

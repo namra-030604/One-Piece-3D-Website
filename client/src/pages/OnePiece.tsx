@@ -4,6 +4,8 @@ declare global {
   interface Window {
     THREE: any;
     gsap: any;
+    anime: any;
+    barba: any;
   }
 }
 
@@ -129,6 +131,8 @@ export default function OnePiece() {
         await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js");
         await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/FilmPass.js");
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js");
+        await loadScript("https://cdn.jsdelivr.net/npm/animejs@4/lib/anime.iife.min.js");
+        await loadScript("https://cdn.jsdelivr.net/npm/@barba/core/dist/barba.umd.js");
         setupScene();
       } catch (err) {
         console.error("[OnePiece] Failed to load CDN scripts:", err);
@@ -140,7 +144,18 @@ export default function OnePiece() {
 
       const THREE = window.THREE;
       const gsap = window.gsap;
+      const anime = window.anime;
       if (!THREE || !gsap) return;
+
+      const splitTextToLetters = (el: HTMLElement, text: string) => {
+        el.innerHTML = '';
+        for (let i = 0; i < text.length; i++) {
+          const span = document.createElement('span');
+          span.className = 'letter';
+          span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
+          el.appendChild(span);
+        }
+      };
 
       initializedRef.current = true;
 

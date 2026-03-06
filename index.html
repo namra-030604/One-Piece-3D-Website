@@ -1,53 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+  <link rel="icon" href="data:,">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
   <title>One Piece 3D Arc Explorer</title>
-  <meta name="description" content="An immersive 3D journey through the arcs of One Piece — a cinematic WebGL portfolio experience." />
+  <meta name="description"
+    content="An immersive 3D journey through the arcs of One Piece — a cinematic WebGL portfolio experience." />
   <meta property="og:title" content="One Piece 3D Arc Explorer" />
-  <meta property="og:description" content="A cinematic portfolio website built with Three.js, GSAP, WebGL. Click to journey through each One Piece arc in 3D." />
+  <meta property="og:description"
+    content="A cinematic portfolio website built with Three.js, GSAP, WebGL. Click to journey through each One Piece arc in 3D." />
   <meta property="og:type" content="website" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600;700;900&display=swap"
+    rel="stylesheet" />
 
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
       background: #050a1a;
       overflow: hidden;
       font-family: sans-serif;
     }
 
     #canvas-mount {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: 0; background: #050a1a; overflow: hidden;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: #050a1a;
+      overflow: hidden;
     }
 
     #vignette {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: 2; pointer-events: none;
-      background: radial-gradient(ellipse at center, transparent 40%, rgba(5,10,26,0.5) 70%, rgba(5,10,26,0.9) 100%);
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(5, 10, 26, 0.5) 70%, rgba(5, 10, 26, 0.9) 100%);
     }
 
     #title-container {
-      position: fixed; top: 50%; left: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 10; text-align: center;
-      pointer-events: none; user-select: none;
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
     }
 
     #arc-title {
       font-family: 'Pirata One', cursive;
       font-size: clamp(3rem, 8vw, 6rem);
-      color: #FFCD00; margin: 0; line-height: 1.1;
+      color: #FFCD00;
+      margin: 0;
+      line-height: 1.1;
       letter-spacing: 0.04em;
-      text-shadow: 0 0 20px rgba(255,205,0,0.6), 0 0 40px rgba(255,205,0,0.3), 0 0 80px rgba(255,205,0,0.15);
+      text-shadow: 0 0 20px rgba(255, 205, 0, 0.6), 0 0 40px rgba(255, 205, 0, 0.3), 0 0 80px rgba(255, 205, 0, 0.15);
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -57,9 +86,11 @@
     #arc-tagline {
       font-family: 'Cinzel', serif;
       font-size: clamp(0.85rem, 1.8vw, 1.1rem);
-      color: #acd6f5; margin: 1rem 0 0 0;
-      letter-spacing: 0.08em; line-height: 1.6;
-      text-shadow: 0 0 12px rgba(172,214,245,0.3);
+      color: #acd6f5;
+      margin: 1rem 0 0 0;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+      text-shadow: 0 0 12px rgba(172, 214, 245, 0.3);
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -67,77 +98,105 @@
     }
 
     #credits-container {
-      position: fixed; top: 50%; left: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 10; text-align: center;
-      display: none; flex-direction: column;
-      align-items: center; gap: 1.2rem;
+      z-index: 10;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
       user-select: none;
     }
 
     #credits-title {
       font-family: 'Pirata One', cursive;
-      font-size: 2rem; color: #FFCD00;
-      text-shadow: 0 0 20px rgba(255,205,0,0.5), 0 0 40px rgba(255,205,0,0.25);
+      font-size: 2rem;
+      color: #FFCD00;
+      text-shadow: 0 0 20px rgba(255, 205, 0, 0.5), 0 0 40px rgba(255, 205, 0, 0.25);
     }
 
     #credits-author {
       font-family: 'Cinzel', serif;
-      font-size: 1.2rem; color: #62C3F8;
-      text-shadow: 0 0 12px rgba(98,195,248,0.3);
+      font-size: 1.2rem;
+      color: #62C3F8;
+      text-shadow: 0 0 12px rgba(98, 195, 248, 0.3);
     }
 
     #credits-tech {
       font-family: 'Cinzel', serif;
-      font-size: 0.9rem; color: #888;
+      font-size: 0.9rem;
+      color: #888;
       letter-spacing: 0.1em;
     }
 
     #credits-portfolio-link {
       font-family: 'Pirata One', cursive;
-      font-size: 1rem; color: #D70000;
-      text-decoration: none; pointer-events: auto;
-      text-shadow: 0 0 10px rgba(215,0,0,0.3);
+      font-size: 1rem;
+      color: #D70000;
+      text-decoration: none;
+      pointer-events: auto;
+      text-shadow: 0 0 10px rgba(215, 0, 0, 0.3);
       transition: text-shadow 0.3s ease, color 0.3s ease;
       margin-top: 0.5rem;
     }
+
     #credits-portfolio-link:hover {
       color: #FF2020;
-      text-shadow: 0 0 15px rgba(215,0,0,0.7), 0 0 30px rgba(215,0,0,0.4), 0 0 50px rgba(215,0,0,0.2);
+      text-shadow: 0 0 15px rgba(215, 0, 0, 0.7), 0 0 30px rgba(215, 0, 0, 0.4), 0 0 50px rgba(215, 0, 0, 0.2);
     }
 
     #progress-dots {
-      position: fixed; bottom: 2rem; right: 2rem;
-      z-index: 100; display: flex; flex-direction: column;
-      gap: 10px; align-items: center; pointer-events: none;
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      pointer-events: none;
     }
 
     .progress-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      border: 1.5px solid #FFCD00; background-color: transparent;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid #FFCD00;
+      background-color: transparent;
       transition: all 0.4s ease;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-font-smoothing: antialiased;
     }
+
     .progress-dot.active {
-      width: 12px; height: 12px;
+      width: 12px;
+      height: 12px;
       background-color: #FFCD00;
-      box-shadow: 0 0 8px rgba(255,205,0,0.7), 0 0 16px rgba(255,205,0,0.35);
+      box-shadow: 0 0 8px rgba(255, 205, 0, 0.7), 0 0 16px rgba(255, 205, 0, 0.35);
     }
 
     #click-prompt-container {
-      position: fixed; bottom: 2.5rem; left: 50%;
+      position: fixed;
+      bottom: 2.5rem;
+      left: 50%;
       transform: translateX(-50%);
-      z-index: 100; text-align: center;
-      pointer-events: none; user-select: none;
+      z-index: 100;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
     }
 
     #click-prompt {
       font-family: 'Pirata One', cursive;
-      font-size: 1rem; color: rgba(255,255,255,0.6);
-      letter-spacing: 0.1em; display: inline-block;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.1em;
+      display: inline-block;
       animation: pulse-prompt 1.5s ease-in-out infinite;
       will-change: transform, opacity;
       transform: translateZ(0);
@@ -146,29 +205,40 @@
     }
 
     #flash-overlay {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: white; opacity: 0;
-      z-index: 999; pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      opacity: 0;
+      z-index: 999;
+      pointer-events: none;
     }
 
     #scan-line {
       position: absolute;
-      left: 0; top: 50%;
-      width: 100%; height: 2px;
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 2px;
       background: #FFCD00;
       opacity: 0;
       pointer-events: none;
     }
 
-    .progress-dot { position: relative; }
+    .progress-dot {
+      position: relative;
+    }
 
     .progress-dot.ripple::after {
       content: '';
       position: absolute;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      width: 10px; height: 10px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       border: 1.5px solid;
       border-color: inherit;
@@ -177,13 +247,25 @@
     }
 
     @keyframes dot-ripple {
-      0% { width: 10px; height: 10px; opacity: 1; }
-      100% { width: 30px; height: 30px; opacity: 0; }
+      0% {
+        width: 10px;
+        height: 10px;
+        opacity: 1;
+      }
+
+      100% {
+        width: 30px;
+        height: 30px;
+        opacity: 0;
+      }
     }
 
     #curtain {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background: #050a1a;
       z-index: 998;
       pointer-events: none;
@@ -192,23 +274,38 @@
 
     #custom-cursor {
       position: fixed;
-      width: 12px; height: 12px;
+      width: 12px;
+      height: 12px;
       border: 2px solid #FFCD00;
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      top: -50px; left: -50px;
+      top: -50px;
+      left: -50px;
     }
 
-    body { cursor: none; }
-    a, [data-credits-link] { cursor: pointer; }
+    body {
+      cursor: none;
+    }
 
-    .letter { display: inline-block; }
+    a,
+    [data-credits-link] {
+      cursor: pointer;
+    }
+
+    .letter {
+      display: inline-block;
+    }
 
     @keyframes shimmer-sweep {
-      0% { background-position: 200% center; }
-      100% { background-position: -200% center; }
+      0% {
+        background-position: 200% center;
+      }
+
+      100% {
+        background-position: -200% center;
+      }
     }
 
     .font-preload {
@@ -220,8 +317,15 @@
     }
 
     @keyframes pulse-prompt {
-      0%, 100% { opacity: 1.0; }
-      50% { opacity: 0.4; }
+
+      0%,
+      100% {
+        opacity: 1.0;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -233,32 +337,33 @@
     }
   </style>
 </head>
+
 <body data-barba="wrapper">
 
   <div data-barba="container" data-barba-namespace="arc-0" id="barba-container">
-  <div id="canvas-mount" data-testid="threejs-canvas-mount"></div>
-  <div id="vignette" data-testid="vignette-overlay"></div>
-  <div id="flash-overlay" data-testid="flash-overlay"></div>
+    <div id="canvas-mount" data-testid="threejs-canvas-mount"></div>
+    <div id="vignette" data-testid="vignette-overlay"></div>
+    <div id="flash-overlay" data-testid="flash-overlay"></div>
 
-  <div id="title-container" data-testid="arc-title-container">
-    <h1 id="arc-title" data-testid="arc-title">SET SAIL</h1>
-    <p id="arc-tagline" data-testid="arc-tagline">The Grand Line awaits — click to begin</p>
-    <div id="scan-line" data-testid="scan-line"></div>
-  </div>
+    <div id="title-container" data-testid="arc-title-container">
+      <h1 id="arc-title" data-testid="arc-title">SET SAIL</h1>
+      <p id="arc-tagline" data-testid="arc-tagline">The Grand Line awaits — click to begin</p>
+      <div id="scan-line" data-testid="scan-line"></div>
+    </div>
 
-  <div id="credits-container" data-testid="credits-container">
-    <div data-credit-line id="credits-title" data-testid="credits-title">The Adventure Continues...</div>
-    <div data-credit-line id="credits-author" data-testid="credits-author">Built by Namra</div>
-    <div data-credit-line id="credits-tech" data-testid="credits-tech">Three.js · GSAP · WebGL</div>
-    <a data-credit-line data-credits-link id="credits-portfolio-link" data-testid="credits-portfolio-link"
-       href="https://github.com/namra-030604" target="_blank" rel="noopener noreferrer">View My Portfolio →</a>
-  </div>
+    <div id="credits-container" data-testid="credits-container">
+      <div data-credit-line id="credits-title" data-testid="credits-title">The Adventure Continues...</div>
+      <div data-credit-line id="credits-author" data-testid="credits-author">Built by Namra</div>
+      <div data-credit-line id="credits-tech" data-testid="credits-tech">Three.js · GSAP · WebGL</div>
+      <a data-credit-line data-credits-link id="credits-portfolio-link" data-testid="credits-portfolio-link"
+        href="https://github.com/namra-030604" target="_blank" rel="noopener noreferrer">View My Portfolio →</a>
+    </div>
 
-  <div id="progress-dots" data-testid="progress-dots"></div>
+    <div id="progress-dots" data-testid="progress-dots"></div>
 
-  <div id="click-prompt-container" data-testid="click-prompt">
-    <span id="click-prompt">Click anywhere to set sail</span>
-  </div>
+    <div id="click-prompt-container" data-testid="click-prompt">
+      <span id="click-prompt">Click anywhere to set sail</span>
+    </div>
   </div>
 
   <div class="font-preload">EAST BLUE ALABASTA SKYPIEA WATER 7 MARINEFORD DRESSROSA WANO</div>
@@ -1199,10 +1304,10 @@
           opacity: 1, y: 0, scale: 1,
           duration: 0.65, ease: 'power3.out'
         })
-        .to(taglineEl, {
-          opacity: 1, y: 0, scale: 1,
-          duration: 0.55, ease: 'power2.out'
-        }, '-=0.45');
+          .to(taglineEl, {
+            opacity: 1, y: 0, scale: 1,
+            duration: 0.55, ease: 'power2.out'
+          }, '-=0.45');
 
         titleEl.style.backgroundImage = 'linear-gradient(90deg, ' + arc.color + ' 0%, ' + arc.color + ' 40%, #FFCD00 50%, ' + arc.color + ' 60%, ' + arc.color + ' 100%)';
         titleEl.style.backgroundSize = '200% 100%';
@@ -1497,4 +1602,5 @@
     })();
   </script>
 </body>
+
 </html>

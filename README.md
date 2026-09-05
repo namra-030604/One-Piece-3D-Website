@@ -1,26 +1,50 @@
 # One Piece 3D Arc Explorer
 
-Cinematic 3D portfolio website inspired by the One Piece anime.
+A cinematic interactive website inspired by the One Piece anime, built as a TypeScript full-stack application with a Vite frontend and Express server.
 
-Built with:
-- Three.js
-- GSAP
-- WebGL
-- TypeScript
-- Vite
+## Highlights
 
-## How to run locally
+- Interactive 3D/WebGL presentation
+- Animated transitions powered by GSAP and Framer Motion
+- Responsive React UI with Tailwind CSS
+- Shared client/server TypeScript structure
+- Optional database integration through Drizzle ORM
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Tech stack
 
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
+React, TypeScript, Vite, Three.js/WebGL, Express, Tailwind CSS, GSAP, Drizzle ORM, and PostgreSQL support.
 
-## GitHub
+## Requirements
 
-[https://github.com/namra-030604](https://github.com/namra-030604)
+- Node.js 20 or newer
+- npm 10 or newer
+- PostgreSQL only when database-backed features are enabled
+
+## Getting started
+
+~~~bash
+npm ci
+npm run dev
+~~~
+
+For a production build:
+
+~~~bash
+npm run check
+npm run build
+npm start
+~~~
+
+Copy `.env.example` to `.env` when local configuration is needed. Keep secrets out of Git.
+
+## Repository layout
+
+- `client/` — React and visual experience
+- `server/` — Express entrypoint and server routes
+- `shared/` — shared types and schemas
+- `script/` — build tooling
+- `.github/` — repository automation
+
+## Notes
+
+This is an independent fan-made project and is not affiliated with the One Piece rights holders. Visual assets and trademarks remain the property of their respective owners.

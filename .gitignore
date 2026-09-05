@@ -1,10 +1,25 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
-.env
-.local/
-dist/
+# Dependencies
 node_modules/
+
+# Builds and generated output
+dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated server assets
+server/public/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
